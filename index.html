@@ -876,6 +876,8 @@
   .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #6FCF97; animation: pulse-dot 2s infinite; }
   .sync-dot.offline { background: #EB8378; animation: none; }
   .btn-logout { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; background: rgba(184,74,62,0.15); color: #EB8378; border: 1px solid rgba(184,74,62,0.3); cursor: pointer; }
+  .btn-update { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; background: #C9A84C; color: #1A2E22; border: 1px solid #E8C97A; cursor: pointer; animation: pulseMaj 1.8s ease-in-out infinite; }
+  @keyframes pulseMaj { 0%,100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.55); } 50% { box-shadow: 0 0 0 6px rgba(201,168,76,0); } }
   .btn-logout:hover { background: rgba(184,74,62,0.3); }
 
   /* ── TOASTS ACTIVITÉ ── */
@@ -926,11 +928,23 @@
   .db-kpi-membres::before { background: var(--navy); }
   .db-kpi-demandes::before{ background: #8B3FAA; }
   .db-kpi-reunions::before{ background: #2A5CAA; }
+  .db-kpi-recettes::before{ background: var(--green); }
+  .db-kpi-depenses::before{ background: var(--red); }
+  .db-kpi-benefice::before{ background: #1E8A72; }
+  .db-kpi-nouveaux::before{ background: #2A9D8F; }
+  .db-kpi-prestamois::before{ background: #B86A2E; }
+  .db-kpi-tauxcotis::before{ background: #2A5CAA; }
 
   .db-kpi-icon { font-size: 26px; flex-shrink: 0; }
   .db-kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 4px; }
   .db-kpi-value { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 700; color: var(--navy); line-height: 1; }
   .db-kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .db-section-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); font-weight: 700; margin: 4px 0 10px 2px; }
+  .db-reserve-side { display:flex; flex-direction:column; justify-content:center; gap:14px; }
+  .db-reserve-stat { padding:12px 14px; border-radius:12px; background:#F7F4EC; border:1px solid var(--border); }
+  .db-reserve-stat .drs-label { font-size:11px; text-transform:uppercase; letter-spacing:0.6px; color:var(--muted); margin-bottom:4px; }
+  .db-reserve-stat .drs-value { font-family:'Fraunces', serif; font-size:20px; font-weight:700; color:var(--navy); }
 
   .db-row-2 {
     display: flex;
@@ -969,10 +983,12 @@
   }
   .db-proch-reunion .dpr-titre { font-weight: 600; font-size: 13px; color: var(--navy); }
   .db-proch-reunion .dpr-date  { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
-  .journal-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+  .journal-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; align-items:center; }
   .journal-item .ji-time { color: var(--muted); white-space: nowrap; font-size: 11px; }
   .journal-item .ji-role { font-weight: 700; color: #9A7828; }
   .journal-item .ji-msg { color: var(--text); flex: 1; }
+  .journal-item .ji-del { flex-shrink:0; cursor:pointer; border:none; background:transparent; color:var(--muted); font-size:14px; padding:2px 6px; border-radius:6px; }
+  .journal-item .ji-del:hover { color:var(--red); background:#FBEAE8; }
 
   /* ══════════════════════════════════════════════════════════════
      MENU LATÉRAL (remplace les anciens onglets horizontaux)
@@ -1299,6 +1315,7 @@
       <div class="sync-dot" id="syncDot"></div>
       <span id="syncText">Synchronisation active</span>
     </div>
+    <button class="btn-update" id="btnMajDisponible" style="display:none" onclick="appliquerMiseAJour()">🔄 Mettre à jour</button>
     <button class="btn-logout" onclick="seDeconnecter()">Se déconnecter</button>
   </div>
 </div>
@@ -1469,6 +1486,59 @@
       </div>
     </div>
 
+    <!-- LIGNE 1bis : KPIs du mois en cours -->
+    <div class="db-section-label" id="dbMoisLabel">Indicateurs du mois</div>
+    <div class="db-kpi-row">
+      <div class="db-kpi-card db-kpi-recettes">
+        <div class="db-kpi-icon">📈</div>
+        <div class="db-kpi-body">
+          <div class="db-kpi-label">Recettes du mois</div>
+          <div class="db-kpi-value" id="dbRecettesMois">0 FCFA</div>
+          <div class="db-kpi-sub" id="dbRecettesMoisSub">—</div>
+        </div>
+      </div>
+      <div class="db-kpi-card db-kpi-depenses">
+        <div class="db-kpi-icon">📉</div>
+        <div class="db-kpi-body">
+          <div class="db-kpi-label">Dépenses du mois</div>
+          <div class="db-kpi-value" id="dbDepensesMois">0 FCFA</div>
+          <div class="db-kpi-sub" id="dbDepensesMoisSub">—</div>
+        </div>
+      </div>
+      <div class="db-kpi-card db-kpi-benefice">
+        <div class="db-kpi-icon">⚖️</div>
+        <div class="db-kpi-body">
+          <div class="db-kpi-label">Bénéfice du mois</div>
+          <div class="db-kpi-value" id="dbBeneficeMois">0 FCFA</div>
+          <div class="db-kpi-sub" id="dbBeneficeMoisSub">—</div>
+        </div>
+      </div>
+      <div class="db-kpi-card db-kpi-nouveaux">
+        <div class="db-kpi-icon">🆕</div>
+        <div class="db-kpi-body">
+          <div class="db-kpi-label">Nouveaux adhérents</div>
+          <div class="db-kpi-value" id="dbNouveauxAdherents">0</div>
+          <div class="db-kpi-sub" id="dbNouveauxAdherentsSub">Ce mois-ci</div>
+        </div>
+      </div>
+      <div class="db-kpi-card db-kpi-prestamois">
+        <div class="db-kpi-icon">🏥</div>
+        <div class="db-kpi-body">
+          <div class="db-kpi-label">Prestations du mois</div>
+          <div class="db-kpi-value" id="dbPrestationsMois">0</div>
+          <div class="db-kpi-sub" id="dbPrestationsMoisSub">—</div>
+        </div>
+      </div>
+      <div class="db-kpi-card db-kpi-tauxcotis">
+        <div class="db-kpi-icon">📊</div>
+        <div class="db-kpi-body">
+          <div class="db-kpi-label">Taux de cotisation</div>
+          <div class="db-kpi-value" id="dbTauxCotisation">0%</div>
+          <div class="db-kpi-sub" id="dbTauxCotisationSub">—</div>
+        </div>
+      </div>
+    </div>
+
     <!-- ALERTES -->
     <div id="dbAlertes"></div>
 
@@ -1487,6 +1557,30 @@
         <div class="card-title">Répartition des sorties</div>
         <div class="card-subtitle">Par catégorie de prestation</div>
         <canvas id="dbChartRep" height="180"></canvas>
+      </div>
+    </div>
+
+    <!-- LIGNE 2bis : Fonds de réserve -->
+    <div class="db-row-2">
+      <div class="card" style="flex:2">
+        <div class="db-card-header">
+          <div>
+            <div class="card-title">Évolution du fonds de réserve</div>
+            <div class="card-subtitle">Réserve de sécurité cumulée (20% des recettes, politique budgétaire MTD)</div>
+          </div>
+        </div>
+        <canvas id="dbChartReserve" height="110"></canvas>
+      </div>
+      <div class="card db-reserve-side" style="flex:1">
+        <div class="card-title" style="margin-bottom:0">Fonds de réserve</div>
+        <div class="db-reserve-stat">
+          <div class="drs-label">Réserve cumulée</div>
+          <div class="drs-value" id="dbReserveTotal">0 FCFA</div>
+        </div>
+        <div class="db-reserve-stat">
+          <div class="drs-label">Alimentation ce mois-ci</div>
+          <div class="drs-value" id="dbReserveMois">0 FCFA</div>
+        </div>
       </div>
     </div>
 
@@ -2022,6 +2116,7 @@
     <div class="card">
       <div class="card-title">Générer un reçu officiel</div>
       <div class="card-subtitle">Sélectionnez une opération pour générer un reçu imprimable à présenter au Conseil d'Administration</div>
+      <div class="info-banner">💡 Le bouton ✕ retire un reçu de cette liste pour l'alléger — l'opération financière et le solde ne sont pas modifiés.</div>
 
       <div class="section-divider"><span>Reçus d'entrées</span></div>
       <table class="data-table">
@@ -2107,9 +2202,14 @@
   <!-- PANEL JOURNAL -->
   <div class="panel" id="panel-journal">
     <div class="card">
-      <div class="card-title">Journal d'activité — Conseil d'Administration</div>
-      <div class="card-subtitle">Toutes les actions effectuées par les membres du CA sont enregistrées ici en temps réel</div>
-      <div class="info-banner">💡 Ce journal est visible par tous les rôles et garantit une transparence totale des opérations.</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div>
+          <div class="card-title">Journal d'activité — Conseil d'Administration</div>
+          <div class="card-subtitle">Toutes les actions effectuées par les membres du CA sont enregistrées ici en temps réel</div>
+        </div>
+        <button class="btn btn-ghost btn-small" onclick="viderJournal()">🗑️ Vider le journal</button>
+      </div>
+      <div class="info-banner">💡 Ce journal est visible par tous les rôles et garantit une transparence totale des opérations. Chaque ligne peut être supprimée individuellement pour libérer de l'espace.</div>
       <div class="journal-list" id="journalList">
         <div class="empty-state">Aucune activité enregistrée pour le moment.</div>
       </div>
@@ -2160,8 +2260,34 @@
     </div>
 
     <div class="card">
-      <div class="card-title">Historique de paiement — Membre sélectionné</div>
-      <div class="card-subtitle">Cliquez sur un membre dans le tableau ci-dessus pour voir son historique complet</div>
+      <div class="card-title">Historique complet d'un membre</div>
+      <div class="card-subtitle">Cotisations versées et prestations reçues, filtrables par mois ou par année</div>
+      <div class="filter-row">
+        <div class="field-group">
+          <label class="field-label">Membre</label>
+          <select class="field-input" id="histMembreSelect" onchange="renderHistoriqueMembre()">
+            <option value="">— Sélectionner un membre —</option>
+          </select>
+        </div>
+        <div class="field-group" style="max-width:160px">
+          <label class="field-label">Période</label>
+          <select class="field-input" id="histModeSelect" onchange="onHistModeChange()">
+            <option value="mois">Un mois</option>
+            <option value="annee">Une année</option>
+          </select>
+        </div>
+        <div class="field-group" style="max-width:180px" id="histMoisGroup">
+          <label class="field-label">Mois</label>
+          <input type="month" class="field-input" id="histMoisInput" onchange="renderHistoriqueMembre()">
+        </div>
+        <div class="field-group" style="max-width:140px;display:none" id="histAnneeGroup">
+          <label class="field-label">Année</label>
+          <select class="field-input" id="histAnneeInput" onchange="renderHistoriqueMembre()"></select>
+        </div>
+        <div style="align-self:flex-end">
+          <button class="btn btn-ghost" onclick="imprimerHistoriqueMembre()">🖨️ Imprimer</button>
+        </div>
+      </div>
       <div id="membreHistoriqueZone"><div class="empty-state">Sélectionnez un membre pour voir son historique.</div></div>
     </div>
   </div>
@@ -2320,6 +2446,15 @@
     </div>
 
     <div class="card">
+      <div class="card-title">🔄 Mises à jour de l'application</div>
+      <div class="card-subtitle">Vérifie s'il existe une nouvelle version du fichier en ligne et l'installe sur cet appareil, y compris pour un usage hors-ligne</div>
+      <div class="info-banner" id="majInfoBanner">💡 L'application vérifie automatiquement les mises à jour dès qu'une connexion internet est disponible. Vous pouvez aussi forcer une vérification manuelle ci-dessous.</div>
+      <button class="btn btn-ghost" onclick="verifierMiseAJour(true)">🔍 Vérifier maintenant</button>
+      <button class="btn btn-gold" id="btnAppliquerMajParametres" style="display:none;margin-left:8px" onclick="appliquerMiseAJour()">🔄 Mettre à jour maintenant</button>
+      <div id="majStatus" style="font-size:12px;color:var(--muted);margin-top:8px">Aucune vérification effectuée pour le moment.</div>
+    </div>
+
+    <div class="card">
       <div class="card-title">☁️ Sauvegarde sur Google Drive</div>
       <div class="card-subtitle">Envoyez une copie de sécurité de toutes les données MTD sur votre propre compte Google Drive</div>
       <div class="info-banner">
@@ -2445,6 +2580,24 @@
         </div>
       </div>
       <button class="btn btn-gold" onclick="enregistrerParametresContact()">💾 Enregistrer ces informations</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🚨 Seuils d'alerte intelligents</div>
+      <div class="card-subtitle">Le logiciel vous prévient automatiquement — retards de cotisation, caisse faible, dépassement de plafond, réunion proche, reçu non imprimé</div>
+
+      <div class="membre-form" style="grid-template-columns:1fr auto;margin-bottom:18px">
+        <div class="field-group" style="margin-bottom:0">
+          <label class="field-label">Seuil d'alerte — fonds de caisse faible (FCFA)</label>
+          <input type="number" class="field-input" id="paramSeuilSolde" min="0" step="5000">
+        </div>
+        <div class="field-group" style="margin-bottom:0;display:flex;align-items:flex-end">
+          <button class="btn btn-ghost" style="height:38px" onclick="enregistrerSeuilSolde()">💾 Enregistrer</button>
+        </div>
+      </div>
+
+      <div class="card-subtitle" style="margin-top:0">Plafonds par prestation (cahier des charges) — alerte si une sortie dépasse le montant fixé</div>
+      <div id="plafondsZone"></div>
     </div>
 
     <div class="card">
@@ -2858,6 +3011,8 @@ function appliquerContactPartout() {
   document.getElementById('paramWhatsapp').value = p.whatsapp;
   document.getElementById('paramEmail').value = p.email;
   document.getElementById('paramLocalisation').value = p.localisation;
+  const seuilInput = document.getElementById('paramSeuilSolde');
+  if (seuilInput) seuilInput.value = getSeuilAlerteSolde();
   const footer = document.querySelector('.app-footer');
   if (footer) {
     footer.innerHTML = `MTD — Mutuelle des Travailleurs de Dorado · ${p.localisation}<br>
@@ -3071,11 +3226,26 @@ function initialiserFirebase() {
     if (data.parametres && data.parametres.tauxMedical) {
       localStorage.setItem('mtd_taux_medical', JSON.stringify(data.parametres.tauxMedical));
     }
+    if (data.parametres && data.parametres.plafondsPrestations) {
+      localStorage.setItem('mtd_plafonds_prestations', JSON.stringify(data.parametres.plafondsPrestations));
+    }
+    if (data.parametres && data.parametres.seuilAlerteSolde !== undefined) {
+      localStorage.setItem('mtd_seuil_alerte_solde', String(data.parametres.seuilAlerteSolde));
+    }
     if (data.parametres && data.parametres.rolesPermissions) {
       const avant = localStorage.getItem('mtd_roles_permissions');
       const apres = JSON.stringify(data.parametres.rolesPermissions);
       localStorage.setItem('mtd_roles_permissions', apres);
       if (avant !== apres) appliquerPermissions();
+    }
+    if (data.parametres && data.parametres.masques) {
+      const mq = data.parametres.masques;
+      entreesMasquees = new Set(mq.entrees || []);
+      sortiesMasquees = new Set(mq.sorties || []);
+      recusMasques = new Set(mq.recus || []);
+      localStorage.setItem('mtd_entrees_masquees', JSON.stringify([...entreesMasquees]));
+      localStorage.setItem('mtd_sorties_masquees', JSON.stringify([...sortiesMasquees]));
+      localStorage.setItem('mtd_recus_masques', JSON.stringify([...recusMasques]));
     }
 
     // Journal activité
@@ -3183,8 +3353,30 @@ function renderJournal(items) {
       <span class="ji-time">${i.heure || ''}</span>
       <span class="ji-role">${i.auteur}</span>
       <span class="ji-msg">${i.message}</span>
+      <button class="ji-del" title="Supprimer cette ligne" onclick="supprimerJournalEntree(${i.ts})">✕</button>
     </div>
   `).join('');
+}
+
+function supprimerJournalEntree(ts) {
+  let journal = JSON.parse(localStorage.getItem('mtd_journal') || '[]');
+  journal = journal.filter(j => j.ts !== ts);
+  localStorage.setItem('mtd_journal', JSON.stringify(journal));
+  if (firebaseOK && db) {
+    db.ref('mtd_dorado/journal').orderByChild('ts').equalTo(ts).once('value').then(snap => {
+      snap.forEach(child => child.ref.remove());
+    }).catch(() => {});
+  }
+  renderJournal(journal.slice(0,20));
+}
+
+function viderJournal() {
+  if (!confirm('⚠️ Vider tout le journal d\'activité ?\n\nCette action est irréversible et ne modifie ni le solde ni aucune donnée financière — seul l\'historique des actions affichées ici sera effacé.')) return;
+  localStorage.setItem('mtd_journal', '[]');
+  if (firebaseOK && db) {
+    db.ref('mtd_dorado/journal').remove().catch(() => {});
+  }
+  renderJournal([]);
 }
 
 function afficherToast(auteur, role, message) {
@@ -3221,6 +3413,39 @@ let cotisationsDepliees = new Set();
 let cotisationsVisiblesIds = [];
 let reunionsDepliees = new Set();
 let reunionsVisiblesIds = [];
+let entreesMasquees = new Set(JSON.parse(localStorage.getItem('mtd_entrees_masquees') || '[]'));
+let sortiesMasquees = new Set(JSON.parse(localStorage.getItem('mtd_sorties_masquees') || '[]'));
+
+function fbSyncMasques() {
+  if (!firebaseOK || !db) return;
+  db.ref('mtd_dorado/parametres/masques').set({
+    entrees: [...entreesMasquees],
+    sorties: [...sortiesMasquees],
+    recus: [...(typeof recusMasques !== 'undefined' ? recusMasques : [])]
+  }).catch(() => {});
+}
+
+function sauverEntreesMasquees() { localStorage.setItem('mtd_entrees_masquees', JSON.stringify([...entreesMasquees])); fbSyncMasques(); }
+function sauverSortiesMasquees() { localStorage.setItem('mtd_sorties_masquees', JSON.stringify([...sortiesMasquees])); fbSyncMasques(); }
+
+function masquerEntree(id) {
+  if (!confirm('Masquer cette ligne de la liste des entrées ?\n\nElle sera retirée de l\'affichage pour alléger la liste, mais elle reste comptabilisée dans le total et le solde.')) return;
+  entreesMasquees.add(id);
+  sauverEntreesMasquees();
+  renderEntrees();
+  journaliser('Masquage', `Ligne d'entrée masquée de la liste (sans impact sur le solde)`);
+}
+
+function masquerSortie(id) {
+  if (!confirm('Masquer cette ligne de la liste des sorties ?\n\nElle sera retirée de l\'affichage pour alléger la liste, mais elle reste comptabilisée dans le total et le solde.')) return;
+  sortiesMasquees.add(id);
+  sauverSortiesMasquees();
+  renderSorties();
+  journaliser('Masquage', `Ligne de sortie masquée de la liste (sans impact sur le solde)`);
+}
+
+function reafficherEntreesMasquees() { entreesMasquees.clear(); sauverEntreesMasquees(); renderEntrees(); }
+function reafficherSortiesMasquees() { sortiesMasquees.clear(); sauverSortiesMasquees(); renderSorties(); }
 
 // ── TOUT PLIER / TOUT DÉPLIER (générique, réutilisé par toutes les listes) ──
 function majBoutonToutBascule(btnId, depliSet, visibleIds) {
@@ -3326,6 +3551,40 @@ function getTauxMedical() {
 function setTauxMedical(taux) {
   localStorage.setItem('mtd_taux_medical', JSON.stringify(taux));
   if (firebaseOK && db) db.ref('mtd_dorado/parametres/tauxMedical').set(taux).catch(() => {});
+}
+
+// ── PLAFONDS PAR PRESTATION (cahier des charges) — alerte si une sortie dépasse ──
+const PLAFONDS_DEFAUT = {
+  'Assistance décès — Membre adhérent': 150000,
+  'Assistance décès — Conjoint déclaré': 100000,
+  'Assistance décès — Enfant déclaré': 75000,
+  'Assistance décès — Parent direct': 75000,
+  'Assistance dot': 50000,
+  'Assistance mariage': 50000,
+  'Soutien post-natal': 25000,
+};
+
+function getPlafondsPrestations() {
+  const stocke = JSON.parse(localStorage.getItem('mtd_plafonds_prestations') || 'null');
+  return { ...PLAFONDS_DEFAUT, ...(stocke || {}) };
+}
+
+function setPlafondsPrestations(plafonds) {
+  localStorage.setItem('mtd_plafonds_prestations', JSON.stringify(plafonds));
+  if (firebaseOK && db) db.ref('mtd_dorado/parametres/plafondsPrestations').set(plafonds).catch(() => {});
+}
+
+// ── SEUIL D'ALERTE : FONDS DE CAISSE FAIBLE ──
+const SEUIL_ALERTE_SOLDE_DEFAUT = 100000;
+
+function getSeuilAlerteSolde() {
+  const v = parseInt(localStorage.getItem('mtd_seuil_alerte_solde'));
+  return isNaN(v) ? SEUIL_ALERTE_SOLDE_DEFAUT : v;
+}
+
+function setSeuilAlerteSolde(v) {
+  localStorage.setItem('mtd_seuil_alerte_solde', String(v));
+  if (firebaseOK && db) db.ref('mtd_dorado/parametres/seuilAlerteSolde').set(v).catch(() => {});
 }
 
 function fmt(n) {
@@ -3735,6 +3994,8 @@ function supprimerEntree(id) {
   if (!e) return;
   if (!confirm(`⚠️ Supprimer cette entrée ?\n\n${e.desc} — ${fmt(e.montant)}\nDate : ${formatDate(e.date)}\n\nElle sera déplacée vers la corbeille.`)) return;
   entrees = entrees.filter(x => x.id !== id);
+  entreesMasquees.delete(id);
+  sauverEntreesMasquees();
   fbRemove('entrees', id);
   envoyerCorbeille('entree', e, `${e.desc} — ${fmt(e.montant)} (${formatDate(e.date)})`);
   journaliser('Suppression', `Entrée envoyée à la corbeille : ${e.desc} — ${fmt(e.montant)}`);
@@ -3789,6 +4050,8 @@ function supprimerSortie(id) {
   if (!s) return;
   if (!confirm(`⚠️ Supprimer cette sortie ?\n\n${s.beneficiaire || s.desc} — ${fmt(s.montant)}\nCatégorie : ${s.type}\nDate : ${formatDate(s.date)}\n\nElle sera déplacée vers la corbeille.`)) return;
   sorties = sorties.filter(x => x.id !== id);
+  sortiesMasquees.delete(id);
+  sauverSortiesMasquees();
   fbRemove('sorties', id);
   envoyerCorbeille('sortie', s, `${s.beneficiaire || s.desc} — ${fmt(s.montant)} (${formatDate(s.date)})`);
   journaliser('Suppression', `Sortie envoyée à la corbeille : ${s.beneficiaire || s.desc} — ${fmt(s.montant)}`);
@@ -3862,16 +4125,19 @@ function calculerSimulation() {
 // ── RENDER ──
 function renderEntrees() {
   const body = document.getElementById('entreesBody');
-  if (entrees.length === 0) {
+  const toutesLesEntrees = entrees;
+  const visibles = toutesLesEntrees.filter(e => !entreesMasquees.has(e.id));
+  if (toutesLesEntrees.length === 0) {
     body.innerHTML = '<tr><td colspan="7" class="empty-state">Aucune entrée enregistrée. Ajoutez votre première cotisation ci-dessus.</td></tr>';
     entreesVisiblesIds = [];
     majBoutonToutBascule('btnToggleAllEntrees', entreesDepliees, entreesVisiblesIds);
+    afficherInfoMasquage('entreesMasqueesInfo', 'entreesBody', entreesMasquees.size, 'reafficherEntreesMasquees');
     return;
   }
-  const sorted = [...entrees].sort((a,b) => new Date(b.date) - new Date(a.date));
+  const sorted = [...visibles].sort((a,b) => new Date(b.date) - new Date(a.date));
   entreesVisiblesIds = sorted.map(e => e.id);
   majBoutonToutBascule('btnToggleAllEntrees', entreesDepliees, entreesVisiblesIds);
-  body.innerHTML = sorted.map(e => {
+  body.innerHTML = sorted.length ? sorted.map(e => {
     const ouvert = entreesDepliees.has(e.id);
     const ligne = `
     <tr class="row-toggle ${ouvert ? 'open' : ''}" data-search-id="${e.id}" onclick="toggleEntreeDetail(${e.id})">
@@ -3883,7 +4149,7 @@ function renderEntrees() {
       <td class="amount-cell in">+${fmt(e.montant)}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn btn-gold btn-small" onclick="imprimerRecu('in', ${e.id})">🧾 Reçu</button>
-        <button class="btn btn-ghost btn-small" onclick="supprimerEntree(${e.id})">Supprimer</button>
+        <button class="btn btn-ghost btn-small" title="Retire la ligne de la liste, sans affecter le total" onclick="masquerEntree(${e.id})">Masquer</button>
       </td>
     </tr>`;
     const detail = ouvert ? `
@@ -3895,10 +4161,31 @@ function renderEntrees() {
           <div class="detail-field"><div class="df-label">Type complet</div><div class="df-value">${e.typeLabel || e.type}</div></div>
           <div class="detail-field"><div class="df-label">Enregistré le</div><div class="df-value">${new Date(e.id).toLocaleString('fr-FR')}</div></div>
         </div>
+        <div class="detail-actions">
+          <button class="btn btn-ghost btn-small" onclick="event.stopPropagation();supprimerEntree(${e.id})">🗑️ Supprimer définitivement (corrige le total)</button>
+        </div>
       </td>
     </tr>` : '';
     return ligne + detail;
-  }).join('');
+  }).join('') : '<tr><td colspan="7" class="empty-state">Toutes les entrées de cette liste sont masquées.</td></tr>';
+  afficherInfoMasquage('entreesMasqueesInfo', 'entreesBody', entreesMasquees.size, 'reafficherEntreesMasquees');
+}
+
+function afficherInfoMasquage(zoneId, corpsTableId, nbMasques, fnReafficher) {
+  const corps = document.getElementById(corpsTableId);
+  const table = corps ? corps.closest('table') : null;
+  let zone = document.getElementById(zoneId);
+  if (nbMasques > 0 && table) {
+    if (!zone) {
+      zone = document.createElement('div');
+      zone.id = zoneId;
+      zone.style.cssText = 'margin-top:10px;margin-bottom:8px;font-size:12px;color:var(--muted)';
+      table.insertAdjacentElement('afterend', zone);
+    }
+    zone.innerHTML = `${nbMasques} ligne(s) masquée(s) (toujours comptée(s) dans le total) — <a href="#" onclick="${fnReafficher}();return false;">tout réafficher</a>`;
+  } else if (zone) {
+    zone.remove();
+  }
 }
 
 function toggleEntreeDetail(id) {
@@ -3908,16 +4195,19 @@ function toggleEntreeDetail(id) {
 
 function renderSorties() {
   const body = document.getElementById('sortiesBody');
-  if (sorties.length === 0) {
+  const toutesLesSorties = sorties;
+  const visibles = toutesLesSorties.filter(s => !sortiesMasquees.has(s.id));
+  if (toutesLesSorties.length === 0) {
     body.innerHTML = '<tr><td colspan="7" class="empty-state">Aucune sortie enregistrée. Ajoutez votre première prestation ci-dessus.</td></tr>';
     sortiesVisiblesIds = [];
     majBoutonToutBascule('btnToggleAllSorties', sortiesDepliees, sortiesVisiblesIds);
+    afficherInfoMasquage('sortiesMasqueesInfo', 'sortiesBody', sortiesMasquees.size, 'reafficherSortiesMasquees');
     return;
   }
-  const sorted = [...sorties].sort((a,b) => new Date(b.date) - new Date(a.date));
+  const sorted = [...visibles].sort((a,b) => new Date(b.date) - new Date(a.date));
   sortiesVisiblesIds = sorted.map(s => s.id);
   majBoutonToutBascule('btnToggleAllSorties', sortiesDepliees, sortiesVisiblesIds);
-  body.innerHTML = sorted.map(s => {
+  body.innerHTML = sorted.length ? sorted.map(s => {
     const ouvert = sortiesDepliees.has(s.id);
     const ligne = `
     <tr class="row-toggle ${ouvert ? 'open' : ''}" data-search-id="${s.id}" onclick="toggleSortieDetail(${s.id})">
@@ -3929,7 +4219,7 @@ function renderSorties() {
       <td class="amount-cell out">-${fmt(s.montant)}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn btn-gold btn-small" onclick="imprimerRecu('out', ${s.id})">🧾 Reçu</button>
-        <button class="btn btn-ghost btn-small" onclick="supprimerSortie(${s.id})">Supprimer</button>
+        <button class="btn btn-ghost btn-small" title="Retire la ligne de la liste, sans affecter le total" onclick="masquerSortie(${s.id})">Masquer</button>
       </td>
     </tr>`;
     const detail = ouvert ? `
@@ -3945,10 +4235,14 @@ function renderSorties() {
           ` : ''}
           <div class="detail-field"><div class="df-label">Enregistré le</div><div class="df-value">${new Date(s.id).toLocaleString('fr-FR')}</div></div>
         </div>
+        <div class="detail-actions">
+          <button class="btn btn-ghost btn-small" onclick="event.stopPropagation();supprimerSortie(${s.id})">🗑️ Supprimer définitivement (corrige le total)</button>
+        </div>
       </td>
     </tr>` : '';
     return ligne + detail;
-  }).join('');
+  }).join('') : '<tr><td colspan="7" class="empty-state">Toutes les sorties de cette liste sont masquées.</td></tr>';
+  afficherInfoMasquage('sortiesMasqueesInfo', 'sortiesBody', sortiesMasquees.size, 'reafficherSortiesMasquees');
 }
 
 function toggleSortieDetail(id) {
@@ -3983,6 +4277,59 @@ function renderDashboard() {
   document.getElementById('dbReunions').textContent = (reunions||[]).length;
   const prochaineR = (reunions||[]).filter(r=>r.date >= moisCourant).sort((a,b)=>a.date.localeCompare(b.date))[0];
   document.getElementById('dbReunionsSub').textContent = prochaineR ? 'Prochaine : ' + formatDate(prochaineR.date) : 'Aucune planifiée';
+
+  // ── KPIs DU MOIS EN COURS ──
+  const moisPrecedent = (() => {
+    const [y,m] = moisCourant.split('-').map(Number);
+    const d = new Date(y, m-2, 1);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  })();
+  const moisLabelEl = document.getElementById('dbMoisLabel');
+  if (moisLabelEl) {
+    const nomsMois = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    const [ym, mm] = moisCourant.split('-').map(Number);
+    moisLabelEl.textContent = 'Indicateurs du mois — ' + nomsMois[mm-1] + ' ' + ym;
+  }
+
+  const entreesMois = entrees.filter(e => e.date && e.date.startsWith(moisCourant));
+  const sortiesMois = sorties.filter(s => s.date && s.date.startsWith(moisCourant));
+  const entreesMoisPrec = entrees.filter(e => e.date && e.date.startsWith(moisPrecedent)).reduce((s,e)=>s+e.montant,0);
+  const sortiesMoisPrec = sorties.filter(s => s.date && s.date.startsWith(moisPrecedent)).reduce((s,o)=>s+o.montant,0);
+
+  const recettesMois = entreesMois.reduce((s,e)=>s+e.montant,0);
+  const depensesMois = sortiesMois.reduce((s,o)=>s+o.montant,0);
+  const beneficeMois = recettesMois - depensesMois;
+
+  document.getElementById('dbRecettesMois').textContent = fmt(recettesMois);
+  document.getElementById('dbRecettesMoisSub').textContent = entreesMoisPrec > 0
+    ? (recettesMois >= entreesMoisPrec ? '▲ +' : '▼ ') + Math.round((recettesMois-entreesMoisPrec)/entreesMoisPrec*100) + '% vs mois dernier'
+    : entreesMois.length + ' opération(s)';
+
+  document.getElementById('dbDepensesMois').textContent = fmt(depensesMois);
+  document.getElementById('dbDepensesMoisSub').textContent = sortiesMoisPrec > 0
+    ? (depensesMois >= sortiesMoisPrec ? '▲ +' : '▼ ') + Math.round((depensesMois-sortiesMoisPrec)/sortiesMoisPrec*100) + '% vs mois dernier'
+    : sortiesMois.length + ' prestation(s)';
+
+  const beneficeEl = document.getElementById('dbBeneficeMois');
+  beneficeEl.textContent = (beneficeMois >= 0 ? '+' : '') + fmt(beneficeMois);
+  beneficeEl.style.color = beneficeMois >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('dbBeneficeMoisSub').textContent = beneficeMois >= 0 ? 'Excédent mensuel' : 'Déficit mensuel';
+
+  const nouveauxAdherents = membres.filter(m => m.dateAdhesion && m.dateAdhesion.startsWith(moisCourant));
+  document.getElementById('dbNouveauxAdherents').textContent = nouveauxAdherents.length;
+  document.getElementById('dbNouveauxAdherentsSub').textContent = membres.length + ' membre(s) au total';
+
+  document.getElementById('dbPrestationsMois').textContent = sortiesMois.length;
+  document.getElementById('dbPrestationsMoisSub').textContent = fmt(depensesMois) + ' versé(s)';
+
+  const membresActifs = membres.filter(m => m.statut !== 'Suspendu');
+  const membresAJourCeMois = membresActifs.filter(m => entrees.some(e =>
+    e.type && e.type.includes('Cotisation') && e.date && e.date.startsWith(moisCourant) &&
+    (e.desc === m.nom + ' ' + m.prenom || e.desc === m.prenom + ' ' + m.nom || e.desc.toLowerCase().includes(m.nom.toLowerCase()))
+  ));
+  const tauxCotisation = membresActifs.length > 0 ? Math.round(membresAJourCeMois.length / membresActifs.length * 100) : 0;
+  document.getElementById('dbTauxCotisation').textContent = tauxCotisation + '%';
+  document.getElementById('dbTauxCotisationSub').textContent = membresAJourCeMois.length + ' / ' + membresActifs.length + ' membre(s) à jour';
 
   // ── ALERTES ──
   const alertZone = document.getElementById('dbAlertes');
@@ -4043,6 +4390,39 @@ function renderDashboard() {
       });
     } else {
       ctx2.parentElement.querySelector('.card-subtitle').textContent = 'Aucune sortie enregistrée.';
+    }
+  }
+
+  // ── FONDS DE RÉSERVE (20% des recettes) ──
+  const TAUX_RESERVE = 0.20;
+  const ctx3 = document.getElementById('dbChartReserve');
+  const monthlyIn = {};
+  entrees.forEach(e => {
+    if (!e.date) return;
+    const m = e.date.slice(0,7);
+    monthlyIn[m] = (monthlyIn[m]||0) + e.montant;
+  });
+  const sortedIn = Object.entries(monthlyIn).sort((a,b)=>a[0].localeCompare(b[0]));
+  let cumulReserve = 0;
+  const reserveLabels = sortedIn.map(([m])=>m);
+  const reserveData = sortedIn.map(([,montant])=>{ cumulReserve += montant * TAUX_RESERVE; return Math.round(cumulReserve); });
+  const reserveMoisActuel = (monthlyIn[moisCourant] || 0) * TAUX_RESERVE;
+
+  document.getElementById('dbReserveTotal').textContent = fmt(Math.round(cumulReserve));
+  document.getElementById('dbReserveMois').textContent = fmt(Math.round(reserveMoisActuel));
+
+  if (ctx3) {
+    if (window._dbChartReserve) window._dbChartReserve.destroy();
+    if (reserveLabels.length > 0) {
+      window._dbChartReserve = new Chart(ctx3, {
+        type:'line',
+        data: { labels: reserveLabels, datasets: [
+          { label:'Fonds de réserve cumulé', data: reserveData, borderColor:'#1E8A72', backgroundColor:'rgba(30,138,114,0.10)', borderWidth:2.5, fill:true, tension:0.4, pointBackgroundColor:'#1E8A72' },
+        ]},
+        options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true } } }
+      });
+    } else {
+      ctx3.parentElement.querySelector('.card-subtitle').textContent = 'Aucune recette enregistrée.';
     }
   }
 
@@ -4197,37 +4577,79 @@ function renderBudget() {
   }
 }
 
+let recusMasques = new Set(JSON.parse(localStorage.getItem('mtd_recus_masques') || '[]'));
+
+function sauverRecusMasques() {
+  localStorage.setItem('mtd_recus_masques', JSON.stringify([...recusMasques]));
+  fbSyncMasques();
+}
+
+function masquerRecu(sens, id) {
+  if (!confirm('Retirer ce reçu de la liste ?\n\nCela ne supprime pas l\'opération financière et n\'affecte pas le solde — seul son affichage dans « Reçus » est retiré.')) return;
+  recusMasques.add(sens + '_' + id);
+  sauverRecusMasques();
+  renderRecus();
+}
+
+function reafficherRecusMasques() {
+  recusMasques.clear();
+  sauverRecusMasques();
+  renderRecus();
+}
+
 function renderRecus() {
   const eBody = document.getElementById('recusEntreesBody');
-  if (entrees.length === 0) {
+  const entreesVisibles = entrees.filter(e => !recusMasques.has('in_' + e.id));
+  if (entreesVisibles.length === 0) {
     eBody.innerHTML = '<tr><td colspan="5" class="empty-state">Aucune entrée enregistrée.</td></tr>';
   } else {
-    const sorted = [...entrees].sort((a,b) => new Date(b.date) - new Date(a.date));
+    const sorted = [...entreesVisibles].sort((a,b) => new Date(b.date) - new Date(a.date));
     eBody.innerHTML = sorted.map(e => `
       <tr>
         <td>${formatDate(e.date)}</td>
         <td>${e.desc}${e.fonction ? ' — ' + e.fonction : ''}</td>
         <td><span class="badge ${inBadge[e.type]}">${e.typeLabel || e.type}</span></td>
         <td class="amount-cell in">+${fmt(e.montant)}</td>
-        <td><button class="btn btn-gold btn-small" onclick="imprimerRecu('in', ${e.id})">🧾 Imprimer le reçu</button></td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-gold btn-small" onclick="imprimerRecu('in', ${e.id})">🧾 Imprimer</button>
+          <button class="btn btn-ghost btn-small" title="Retirer de la liste (sans toucher au solde)" onclick="masquerRecu('in', ${e.id})">✕</button>
+        </td>
       </tr>
     `).join('');
   }
 
   const sBody = document.getElementById('recusSortiesBody');
-  if (sorties.length === 0) {
+  const sortiesVisibles = sorties.filter(s => !recusMasques.has('out_' + s.id));
+  if (sortiesVisibles.length === 0) {
     sBody.innerHTML = '<tr><td colspan="5" class="empty-state">Aucune sortie enregistrée.</td></tr>';
   } else {
-    const sorted = [...sorties].sort((a,b) => new Date(b.date) - new Date(a.date));
+    const sorted = [...sortiesVisibles].sort((a,b) => new Date(b.date) - new Date(a.date));
     sBody.innerHTML = sorted.map(s => `
       <tr>
         <td>${formatDate(s.date)}</td>
         <td>${s.beneficiaire || s.desc}${s.objet ? ' — ' + s.objet : ''}</td>
         <td><span class="badge ${catBadge[s.type]}">${s.type}</span></td>
         <td class="amount-cell out">-${fmt(s.montant)}</td>
-        <td><button class="btn btn-gold btn-small" onclick="imprimerRecu('out', ${s.id})">🧾 Imprimer le reçu</button></td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-gold btn-small" onclick="imprimerRecu('out', ${s.id})">🧾 Imprimer</button>
+          <button class="btn btn-ghost btn-small" title="Retirer de la liste (sans toucher au solde)" onclick="masquerRecu('out', ${s.id})">✕</button>
+        </td>
       </tr>
     `).join('');
+  }
+
+  const nbMasques = recusMasques.size;
+  let zoneMasques = document.getElementById('recusMasquesInfo');
+  if (nbMasques > 0) {
+    if (!zoneMasques) {
+      zoneMasques = document.createElement('div');
+      zoneMasques.id = 'recusMasquesInfo';
+      zoneMasques.style.cssText = 'margin-top:12px;font-size:12px;color:var(--muted)';
+      sBody.closest('table').insertAdjacentElement('afterend', zoneMasques);
+    }
+    zoneMasques.innerHTML = `${nbMasques} reçu(s) retiré(s) de cette liste — <a href="#" onclick="reafficherRecusMasques();return false;">tout réafficher</a>`;
+  } else if (zoneMasques) {
+    zoneMasques.remove();
   }
 }
 
@@ -4309,8 +4731,10 @@ function imprimerRecu(sens, id) {
   const titre = isIn ? 'REÇU DE PAIEMENT' : 'PIÈCE DE DÉCAISSEMENT';
   const sousTitre = isIn ? 'Confirmation de versement à la MTD' : 'Versement de prestation / dépense MTD';
   const labelPersonne = isIn ? 'Versé par' : 'Bénéficiaire';
-  const labelFonction = 'Fonction ou activités';
-  const valeurFonction = isIn ? (op.fonction || '—') : (op.objet || op.prestation || '—');
+  const labelFonction = isIn ? 'Fonction ou activités' : 'Objet / Prestation';
+  const valeurFonction = isIn
+    ? (op.fonction || '—')
+    : ([op.objet, op.prestation].filter(Boolean).join(' — ') || op.type || '—');
   const sig1 = isIn ? 'Le Trésorier Général' : 'Le Trésorier Général';
   const sig2 = isIn ? 'Le membre' : 'Le Président du C.A.';
   const nomPersonne = isIn ? op.desc : (op.beneficiaire || op.desc);
@@ -4382,6 +4806,15 @@ function imprimerRecu(sens, id) {
 
   document.getElementById('printArea').innerHTML = html;
   window.print();
+
+  // Marque le reçu comme imprimé (pour la notification "reçu non imprimé")
+  if (!op.recuImprime) {
+    op.recuImprime = true;
+    op.recuImprimeDate = todayStr();
+    sauvegarderLocal();
+    fbUpsert(isIn ? 'entrees' : 'sorties', op);
+    renderNotifications();
+  }
 }
 
 function imprimerRecapitulatifCA() {
@@ -4907,6 +5340,7 @@ function renderMembreDetailRow(m) {
         </div>
         <div class="detail-actions">
           <button class="btn btn-gold btn-small" onclick="imprimerFicheMembre(${m.id})">🖨️ Imprimer la fiche</button>
+          <button class="btn btn-ghost btn-small" onclick="voirHistoriqueMembre(${m.id})">📜 Historique cotisations & prestations</button>
           <button class="btn btn-ghost btn-small" onclick="modifierMembre(${m.id})">✏️ Modifier</button>
           <button class="btn btn-ghost btn-small" onclick="voirDetailMembre(${m.id})">Fermer</button>
         </div>
@@ -5084,6 +5518,7 @@ function renderAll() {
   renderEntrees();
   renderSorties();
   renderTauxMedical();
+  renderPlafonds();
   renderDashboard();
   renderBudget();
   renderRecus();
@@ -5094,6 +5529,8 @@ function renderAll() {
   renderRapportMembres();
   renderRapportEntrees();
   renderRapportSorties();
+  peuplerSelectMembresHistorique();
+  renderHistoriqueMembre();
   // Journal
   const journalLocal = JSON.parse(localStorage.getItem('mtd_journal') || '[]');
   renderJournal(journalLocal.slice(0, 20));
@@ -5148,9 +5585,74 @@ function genererNotifications() {
     const diff = moisDiff(dernier.date.slice(0,7), moisCourant);
     if (diff >= 1) {
       notifs.push({
-        key: 'retard-' + m.id + '-' + moisCourant, icon: '⚠️', tab: 'cotisations',
-        titre: 'Retard de cotisation',
+        key: 'retard-' + m.id + '-' + moisCourant, icon: diff >= 2 ? '🔴' : '⚠️', tab: 'cotisations',
+        titre: diff >= 2 ? `Retard de cotisation (${diff} mois)` : 'Retard de cotisation',
         texte: `${m.prenom} ${m.nom} — ${diff} mois de retard`
+      });
+    }
+  });
+
+  // Fonds de caisse faible
+  const totalE = entrees.reduce((s,e) => s + (e.montant||0), 0);
+  const totalS = sorties.reduce((s,o) => s + (o.montant||0), 0);
+  const soldeCaisse = totalE - totalS;
+  const seuilSolde = getSeuilAlerteSolde();
+  if (soldeCaisse < seuilSolde) {
+    notifs.push({
+      key: 'solde-faible-' + moisCourant, icon: '🚨', tab: 'dashboard',
+      titre: 'Fonds de caisse faible',
+      texte: `Solde actuel ${fmt(soldeCaisse)} — sous le seuil d'alerte de ${fmt(seuilSolde)}`
+    });
+  }
+
+  // Prestations dépassant le plafond (sorties des 60 derniers jours)
+  const plafonds = getPlafondsPrestations();
+  const ilY60Jours = new Date(); ilY60Jours.setDate(ilY60Jours.getDate() - 60);
+  const seuilDatePlafond = ilY60Jours.toISOString().slice(0,10);
+  sorties.forEach(s => {
+    const plafond = s.prestation ? plafonds[s.prestation] : undefined;
+    if (plafond === undefined || !s.date || s.date < seuilDatePlafond) return;
+    if ((s.montant||0) > plafond) {
+      notifs.push({
+        key: 'plafond-' + s.id, icon: '📈', tab: 'sorties',
+        titre: 'Prestation au-delà du plafond',
+        texte: `${s.beneficiaire||s.desc||''} — ${s.prestation} — ${fmt(s.montant)} (plafond ${fmt(plafond)})`
+      });
+    }
+  });
+
+  // Réunions du CA qui approchent (dans les 3 prochains jours)
+  const aujourdhui = todayStr();
+  const dansTroisJours = new Date(); dansTroisJours.setDate(dansTroisJours.getDate() + 3);
+  const limiteReunion = dansTroisJours.toISOString().slice(0,10);
+  (typeof reunions !== 'undefined' ? reunions : []).forEach(r => {
+    if (r.date && r.date >= aujourdhui && r.date <= limiteReunion) {
+      notifs.push({
+        key: 'reunion-' + r.id + '-' + r.date, icon: '📅', tab: 'reunions',
+        titre: 'Réunion du CA à venir',
+        texte: `${r.titre||r.type||'Réunion'} — ${formatDate(r.date)}${r.lieu ? ' · ' + r.lieu : ''}`
+      });
+    }
+  });
+
+  // Reçus non imprimés (opérations récentes, 7 derniers jours)
+  const ilY7Jours = new Date(); ilY7Jours.setDate(ilY7Jours.getDate() - 7);
+  const seuilDateRecu = ilY7Jours.toISOString().slice(0,10);
+  entrees.forEach(e => {
+    if (e.date && e.date >= seuilDateRecu && !e.recuImprime) {
+      notifs.push({
+        key: 'recu-in-' + e.id, icon: '🧾', tab: 'entrees',
+        titre: 'Reçu non imprimé',
+        texte: `Entrée — ${e.desc||''} — ${fmt(e.montant)} du ${formatDate(e.date)}`
+      });
+    }
+  });
+  sorties.forEach(s => {
+    if (s.date && s.date >= seuilDateRecu && !s.recuImprime) {
+      notifs.push({
+        key: 'recu-out-' + s.id, icon: '🧾', tab: 'sorties',
+        titre: 'Reçu non imprimé',
+        texte: `Sortie — ${s.beneficiaire||s.desc||''} — ${fmt(s.montant)} du ${formatDate(s.date)}`
       });
     }
   });
@@ -5604,31 +6106,154 @@ function renderCotisStats(paye, retard, absent, total) {
   `;
 }
 
+function membreCorrespond(m, texte) {
+  if (!texte) return false;
+  const t = texte.toLowerCase();
+  return t === (m.nom + ' ' + m.prenom).toLowerCase() ||
+         t === (m.prenom + ' ' + m.nom).toLowerCase() ||
+         t.includes(m.nom.toLowerCase());
+}
+
+function peuplerSelectMembresHistorique() {
+  const sel = document.getElementById('histMembreSelect');
+  const anneeSel = document.getElementById('histAnneeInput');
+  if (!sel) return;
+  const valActuelle = sel.value;
+  const tri = [...membres].sort((a,b) => (a.nom+a.prenom).localeCompare(b.nom+b.prenom));
+  sel.innerHTML = '<option value="">— Sélectionner un membre —</option>' +
+    tri.map(m => `<option value="${m.id}">${m.numero} — ${m.prenom} ${m.nom}</option>`).join('');
+  if (valActuelle && membres.some(m => String(m.id) === valActuelle)) sel.value = valActuelle;
+
+  if (anneeSel) {
+    const valAnnee = anneeSel.value;
+    const anneeCourante = new Date().getFullYear();
+    const anneesDonnees = new Set([anneeCourante]);
+    entrees.forEach(e => { if (e.date) anneesDonnees.add(parseInt(e.date.slice(0,4))); });
+    sorties.forEach(s => { if (s.date) anneesDonnees.add(parseInt(s.date.slice(0,4))); });
+    const anneesTri = [...anneesDonnees].sort((a,b) => b-a);
+    anneeSel.innerHTML = anneesTri.map(a => `<option value="${a}">${a}</option>`).join('');
+    anneeSel.value = valAnnee || anneeCourante;
+  }
+  const moisInput = document.getElementById('histMoisInput');
+  if (moisInput && !moisInput.value) moisInput.value = new Date().toISOString().slice(0,7);
+}
+
+function onHistModeChange() {
+  const mode = document.getElementById('histModeSelect').value;
+  document.getElementById('histMoisGroup').style.display = mode === 'mois' ? '' : 'none';
+  document.getElementById('histAnneeGroup').style.display = mode === 'annee' ? '' : 'none';
+  renderHistoriqueMembre();
+}
+
 function voirHistoriqueMembre(id) {
-  const m = membres.find(x => x.id === id);
-  if (!m) return;
+  peuplerSelectMembresHistorique();
+  const sel = document.getElementById('histMembreSelect');
+  if (sel) sel.value = id;
+  document.querySelector('.tab[data-tab="cotisations"]')?.click();
+  renderHistoriqueMembre();
+  document.getElementById('membreHistoriqueZone')?.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function renderHistoriqueMembre() {
   const zone = document.getElementById('membreHistoriqueZone');
-  const paiements = entrees.filter(e =>
-    e.type && e.type.includes('Cotisation') &&
-    (e.desc === m.nom + ' ' + m.prenom || e.desc === m.prenom + ' ' + m.nom || e.desc.toLowerCase().includes(m.nom.toLowerCase()))
+  if (!zone) return;
+  const sel = document.getElementById('histMembreSelect');
+  const id = sel ? parseInt(sel.value) : NaN;
+  const m = membres.find(x => x.id === id);
+  if (!m) {
+    zone.innerHTML = '<div class="empty-state">Sélectionnez un membre pour voir son historique.</div>';
+    return;
+  }
+
+  const mode = document.getElementById('histModeSelect')?.value || 'mois';
+  let periode, periodeLabel;
+  if (mode === 'mois') {
+    periode = document.getElementById('histMoisInput')?.value || new Date().toISOString().slice(0,7);
+    const [y,mm] = periode.split('-').map(Number);
+    const nomsMois = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    periodeLabel = nomsMois[mm-1] + ' ' + y;
+  } else {
+    periode = document.getElementById('histAnneeInput')?.value || String(new Date().getFullYear());
+    periodeLabel = 'Année ' + periode;
+  }
+
+  const cotisations = entrees.filter(e =>
+    e.type && e.type.includes('Cotisation') && e.date && e.date.startsWith(periode) && membreCorrespond(m, e.desc)
   ).sort((a,b) => b.date.localeCompare(a.date));
 
-  const total = paiements.reduce((s,p) => s+p.montant, 0);
-  const rows = paiements.length === 0
-    ? '<tr><td colspan="4" class="empty-state">Aucun paiement enregistré pour ce membre.</td></tr>'
-    : paiements.map(p => `<tr><td>${formatDate(p.date)}</td><td>${p.typeLabel||p.type}</td><td style="font-family:monospace;color:var(--green);font-weight:600">+${fmt(p.montant)}</td><td>${p.fonction||'—'}</td></tr>`).join('');
+  const autresEntrees = entrees.filter(e =>
+    (!e.type || !e.type.includes('Cotisation')) && e.date && e.date.startsWith(periode) && membreCorrespond(m, e.desc)
+  ).sort((a,b) => b.date.localeCompare(a.date));
+
+  const prestations = sorties.filter(s =>
+    s.date && s.date.startsWith(periode) && membreCorrespond(m, s.beneficiaire || s.desc)
+  ).sort((a,b) => b.date.localeCompare(a.date));
+
+  const totalCotise = cotisations.reduce((s,p) => s+p.montant, 0);
+  const totalAutresEntrees = autresEntrees.reduce((s,p) => s+p.montant, 0);
+  const totalPrestations = prestations.reduce((s,p) => s+p.montant, 0);
+
+  const lignes = [
+    ...cotisations.map(p => ({ date:p.date, sens:'in', categorie: p.typeLabel||p.type, detail:'Cotisation', montant:p.montant })),
+    ...autresEntrees.map(p => ({ date:p.date, sens:'in', categorie: p.typeLabel||p.type, detail:p.desc, montant:p.montant })),
+    ...prestations.map(p => ({ date:p.date, sens:'out', categorie: p.type, detail:[p.objet,p.prestation].filter(Boolean).join(' — ') || '—', montant:p.montant })),
+  ].sort((a,b) => b.date.localeCompare(a.date));
+
+  const rows = lignes.length === 0
+    ? '<tr><td colspan="5" class="empty-state">Aucune opération pour cette période.</td></tr>'
+    : lignes.map(l => `
+      <tr>
+        <td>${formatDate(l.date)}</td>
+        <td>${l.sens === 'in' ? '📥 Entrée' : '📤 Prestation'}</td>
+        <td>${l.categorie}</td>
+        <td>${l.detail}</td>
+        <td style="font-family:monospace;font-weight:600;color:${l.sens==='in'?'var(--green)':'var(--red)'}">${l.sens==='in'?'+':'-'}${fmt(l.montant)}</td>
+      </tr>`).join('');
 
   zone.innerHTML = `
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
       <div><b style="font-size:16px">${m.prenom} ${m.nom}</b> — N° ${m.numero}</div>
-      <span class="badge-statut badge-aJour">Total versé : ${fmt(total)}</span>
-      <span style="font-size:12px;color:var(--muted)">${paiements.length} paiement(s)</span>
+      <span style="font-size:12px;color:var(--muted)">${periodeLabel}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:18px">
+      <div class="stat-card green"><div class="stat-label">Cotisations versées</div><div class="stat-value">${fmt(totalCotise)}</div></div>
+      <div class="stat-card red"><div class="stat-label">Prestations reçues</div><div class="stat-value">${fmt(totalPrestations)}</div></div>
+      <div class="stat-card"><div class="stat-label">Nb prestations</div><div class="stat-value">${prestations.length}</div></div>
+      ${totalAutresEntrees > 0 ? `<div class="stat-card"><div class="stat-label">Autres versements</div><div class="stat-value" style="font-size:14px">${fmt(totalAutresEntrees)}</div></div>` : ''}
     </div>
     <table class="data-table">
-      <thead><tr><th>Date</th><th>Type</th><th>Montant</th><th>Fonction</th></tr></thead>
+      <thead><tr><th>Date</th><th>Sens</th><th>Catégorie</th><th>Détail</th><th style="text-align:right">Montant</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   `;
+}
+
+function imprimerHistoriqueMembre() {
+  const sel = document.getElementById('histMembreSelect');
+  const id = sel ? parseInt(sel.value) : NaN;
+  const m = membres.find(x => x.id === id);
+  if (!m) { alert('Veuillez sélectionner un membre.'); return; }
+  const contact = getParametresContact();
+  const contenu = document.getElementById('membreHistoriqueZone').innerHTML;
+  const html = `
+    <div class="recu-doc">
+      <div class="recu-header">
+        <div class="rh-brand">
+          <div class="rh-mark">MTD</div>
+          <div>
+            <h2>Mutuelle des Travailleurs de Dorado</h2>
+            <p>${contact.localisation}</p>
+          </div>
+        </div>
+        <div class="rh-num">Historique membre<br>${formatDate(todayStr())}</div>
+      </div>
+      <div class="recu-title">HISTORIQUE DES OPÉRATIONS DU MEMBRE</div>
+      <div class="recu-subtitle">Cotisations versées et prestations reçues</div>
+      ${contenu}
+    </div>
+  `;
+  document.getElementById('printArea').innerHTML = html;
+  window.print();
 }
 
 function ajouterCotisationRapide(id) {
@@ -5833,6 +6458,51 @@ function renderTauxMedical() {
     ${peutModifier ? '<div style="font-size:11.5px;color:var(--muted);margin-top:8px">Toute modification ici s\'applique immédiatement aux prochaines demandes et sorties saisies par tous les membres du CA.</div>' : ''}
   `;
   zones.forEach(zone => zone.innerHTML = html);
+}
+
+function renderPlafonds() {
+  const zone = document.getElementById('plafondsZone');
+  if (!zone) return;
+  const plafonds = getPlafondsPrestations();
+  const peutModifier = getPermission('peutEcrire');
+  zone.innerHTML = `
+    <table class="data-table">
+      <thead><tr><th>Prestation</th><th style="width:180px">Plafond (FCFA)</th></tr></thead>
+      <tbody>
+        ${Object.keys(plafonds).map(type => `
+          <tr>
+            <td>${type}</td>
+            <td>
+              <input type="number" class="field-input" style="padding:6px 10px;width:130px" min="0" step="5000"
+                value="${plafonds[type]}" ${peutModifier ? '' : 'disabled'}
+                onchange="modifierPlafond('${type.replace(/'/g,"\\'")}', this.value)">
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    ${peutModifier ? '<div style="font-size:11.5px;color:var(--muted);margin-top:8px">Une notification apparaît automatiquement dès qu\'une sortie dépasse le plafond fixé pour sa catégorie.</div>' : ''}
+  `;
+}
+
+function modifierPlafond(prestation, valeur) {
+  if (!getPermission('peutEcrire')) { alert('Votre rôle ne permet pas de modifier les plafonds.'); return; }
+  const v = Math.max(0, parseInt(valeur) || 0);
+  const plafonds = getPlafondsPrestations();
+  plafonds[prestation] = v;
+  setPlafondsPrestations(plafonds);
+  journaliser('Paramètres', `Plafond de prestation modifié : ${prestation} → ${fmt(v)}`);
+  renderPlafonds();
+  renderNotifications();
+}
+
+function enregistrerSeuilSolde() {
+  if (!getPermission('peutEcrire')) { alert('Votre rôle ne permet pas de modifier ce seuil.'); return; }
+  const v = Math.max(0, parseInt(document.getElementById('paramSeuilSolde').value) || 0);
+  setSeuilAlerteSolde(v);
+  journaliser('Paramètres', `Seuil d'alerte de fonds de caisse modifié : ${fmt(v)}`);
+  renderNotifications();
+  alert('✅ Seuil d\'alerte enregistré.');
 }
 
 function modifierTauxMedical(typeSoin, valeur) {
@@ -6325,6 +6995,8 @@ document.querySelectorAll('.tab').forEach(tab => {
       case 'cotisations':
         document.getElementById('cotisFilter').value = new Date().toISOString().slice(0,7);
         renderCotisations();
+        peuplerSelectMembresHistorique();
+        renderHistoriqueMembre();
         break;
       case 'statistiques': renderStatistiques(); break;
       case 'sorties':      onOutTypeChange(); renderTauxMedical(); break;
@@ -6344,18 +7016,91 @@ renderCorbeille();
 appliquerContactPartout();
 
 // ══════════════════════════════════════════════════════════════════════════
-// PWA — Enregistrement du service worker & invite d'installation
+// PWA — Enregistrement du service worker, détection & application des MAJ
 // ══════════════════════════════════════════════════════════════════════════
 let pwaDeferredPrompt = null;
+let swRegistration = null;
+let swEnAttente = null;
+
+function afficherMajDisponible() {
+  const btnBarre = document.getElementById('btnMajDisponible');
+  const btnParam = document.getElementById('btnAppliquerMajParametres');
+  const statut = document.getElementById('majStatus');
+  if (btnBarre) btnBarre.style.display = '';
+  if (btnParam) btnParam.style.display = '';
+  if (statut) statut.textContent = '🔔 Une nouvelle version est disponible — cliquez sur « Mettre à jour » pour l\'installer.';
+}
+
+function suivreInstallation(worker) {
+  if (!worker) return;
+  worker.addEventListener('statechange', () => {
+    if (worker.state === 'installed') {
+      if (navigator.serviceWorker.controller) {
+        // Une version était déjà active : une nouvelle vient d'être téléchargée.
+        swEnAttente = worker;
+        afficherMajDisponible();
+      }
+    }
+  });
+}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js').catch(() => {
+    navigator.serviceWorker.register('./service-worker.js').then(reg => {
+      swRegistration = reg;
+
+      // Une mise à jour est peut-être déjà en attente d'activation
+      if (reg.waiting) { swEnAttente = reg.waiting; afficherMajDisponible(); }
+
+      // Surveille les nouvelles installations détectées par le navigateur
+      reg.addEventListener('updatefound', () => suivreInstallation(reg.installing));
+
+      // Vérifie immédiatement s'il existe une version plus récente en ligne
+      verifierMiseAJour(false);
+    }).catch(() => {
       // Le fichier doit être hébergé (http/https) sur le même dossier que ce HTML.
       // Si ouvert directement en local (file://), l'installation PWA n'est pas disponible,
       // mais l'application reste pleinement fonctionnelle en ligne.
     });
   });
+
+  // Dès que la connexion internet revient, on revérifie automatiquement
+  window.addEventListener('online', () => verifierMiseAJour(false));
+
+  // Vérification périodique en arrière-plan (toutes les 30 minutes si l'app reste ouverte)
+  setInterval(() => verifierMiseAJour(false), 30 * 60 * 1000);
+
+  // Quand le nouveau service worker prend le contrôle, on recharge une seule fois
+  let rechargementEnCours = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (rechargementEnCours) return;
+    rechargementEnCours = true;
+    window.location.reload();
+  });
+}
+
+function verifierMiseAJour(manuel) {
+  const statut = document.getElementById('majStatus');
+  if (!navigator.onLine) {
+    if (manuel && statut) statut.textContent = '📴 Pas de connexion internet — impossible de vérifier une mise à jour pour le moment.';
+    return;
+  }
+  if (!swRegistration) {
+    if (manuel && statut) statut.textContent = 'ℹ️ Vérification disponible uniquement lorsque l\'application est installée/hébergée en ligne.';
+    return;
+  }
+  swRegistration.update().then(() => {
+    if (manuel && statut && !swEnAttente) {
+      statut.textContent = '✅ Vous utilisez déjà la dernière version (vérifié le ' + new Date().toLocaleString('fr-FR') + ').';
+    }
+  }).catch(() => {
+    if (manuel && statut) statut.textContent = '⚠️ Impossible de vérifier une mise à jour pour le moment (hors-ligne ou serveur injoignable).';
+  });
+}
+
+function appliquerMiseAJour() {
+  if (!swEnAttente) { verifierMiseAJour(true); return; }
+  swEnAttente.postMessage({ type: 'SKIP_WAITING' });
 }
 
 window.addEventListener('beforeinstallprompt', (e) => {
