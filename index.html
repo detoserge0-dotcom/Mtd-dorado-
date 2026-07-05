@@ -2233,16 +2233,13 @@
       <div class="info-banner">
         💡 Vos données sont sauvegardées automatiquement dans ce navigateur toutes les 30 secondes. Pour une sécurité maximale (changement d'appareil, navigateur effacé...), téléchargez régulièrement une sauvegarde de secours au format fichier.
       </div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px">
+      <div style="display:flex; gap:10px; flex-wrap:wrap">
         <button class="btn btn-gold" onclick="exporterDonnees()">💾 Télécharger une sauvegarde complète</button>
         <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">📂 Restaurer depuis un fichier</button>
       </div>
-
-      <div class="section-divider"><span>Zone dangereuse</span></div>
-      <p style="font-size:12.5px; color:var(--muted); margin-bottom:12px">
-        La réinitialisation supprime définitivement toutes les entrées, sorties, archives et membres enregistrés dans cet outil. Cette action est irréversible — pensez à exporter une sauvegarde avant.
-      </p>
-      <button class="btn" style="background:var(--red-light); color:var(--red); border:1.5px solid var(--red)" onclick="reinitialiserToutesLesDonnees()">🗑️ Réinitialiser toutes les données</button>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:10px">
+        💡 Les options de réinitialisation (soldes ou données complètes) se trouvent désormais dans l'onglet ⚙️ Paramètres → Zone dangereuse, réservé au Président.
+      </div>
     </div>
   </div>
 
@@ -2677,6 +2674,24 @@
       </div>
       <div id="notifPermStatus" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
     </div>
+
+    <div class="card" id="paramDangerCard" style="display:none;border-color:#E3C9C9">
+      <div class="card-title">🛑 Zone dangereuse</div>
+      <div class="card-subtitle">Réservé au Président — ces actions sont irréversibles et nécessitent votre mot de passe</div>
+
+      <div class="section-divider"><span>Réinitialiser les soldes</span></div>
+      <div class="info-banner">
+        💡 Le Solde de trésorerie et le Fonds de réserve sont calculés à partir des entrées et sorties enregistrées. Pour les remettre à 0 sans perdre l'historique, cette action archive automatiquement toutes les entrées/sorties actuelles (comme un rapport mensuel), puis vide la caisse pour repartir à zéro.
+      </div>
+      <div id="paramSoldeActuelZone" style="font-size:12.5px;color:var(--muted);margin-bottom:12px"></div>
+      <button class="btn" style="background:var(--red-light); color:var(--red); border:1.5px solid var(--red)" onclick="reinitialiserSoldeCaisse()">🔄 Réinitialiser les soldes à zéro</button>
+
+      <div class="section-divider" style="margin-top:26px"><span>Réinitialisation complète de l'outil</span></div>
+      <p style="font-size:12.5px; color:var(--muted); margin-bottom:12px">
+        Supprime définitivement toutes les entrées, sorties, archives, membres, demandes, réunions et la corbeille. Téléchargez une sauvegarde avant de continuer (onglet Rapports → Sécurité des données).
+      </p>
+      <button class="btn" style="background:var(--red-light); color:var(--red); border:1.5px solid var(--red)" onclick="reinitialiserToutesLesDonnees()">🗑️ Réinitialiser toutes les données</button>
+    </div>
   </div>
 
   <!-- ══ PANEL CORBEILLE ══ -->
@@ -2973,9 +2988,24 @@ function appliquerPermissions() {
   if (adminCard) adminCard.style.display = getPermission('peutGererMdp') ? '' : 'none';
   const rolesCard = document.getElementById('paramRolesCard');
   if (rolesCard) rolesCard.style.display = getPermission('peutGererMdp') ? '' : 'none';
+  const dangerCard = document.getElementById('paramDangerCard');
+  if (dangerCard) dangerCard.style.display = (session && session.role === 'president') ? '' : 'none';
   renderParamRoles();
   renderTableauRolesJournal();
   renderParamCompte();
+  renderParamSoldeActuel();
+}
+
+function renderParamSoldeActuel() {
+  const zone = document.getElementById('paramSoldeActuelZone');
+  if (!zone) return;
+  const totalEntrees = entrees.reduce((s,e) => s + (e.montant||0), 0);
+  const totalSorties = sorties.reduce((s,o) => s + (o.montant||0), 0);
+  const solde = totalEntrees - totalSorties;
+  const fondsReserve = calculerFondsReserve();
+  zone.innerHTML =
+    `Solde de trésorerie actuel : <b>${fmt(solde)}</b> (${entrees.length} entrée(s), ${sorties.length} sortie(s)) — ` +
+    `Fonds de réserve actuel : <b>${fmt(fondsReserve)}</b>`;
 }
 
 function renderParamCompte() {
@@ -5634,7 +5664,71 @@ function imprimerFicheMembre(id) {
   window.print();
 }
 
-function reinitialiserToutesLesDonnees() {
+async function reinitialiserSoldeCaisse() {
+  if (!session || session.role !== 'president') { alert('⛔ Seul le Président peut réinitialiser les soldes.'); return; }
+
+  if (entrees.length === 0 && sorties.length === 0) {
+    alert('Il n\'y a aucune entrée ni sortie à réinitialiser : le solde est déjà à 0.');
+    return;
+  }
+
+  const totalEntrees = entrees.reduce((s,e) => s + (e.montant||0), 0);
+  const totalSorties = sorties.reduce((s,o) => s + (o.montant||0), 0);
+  const solde = totalEntrees - totalSorties;
+  const fondsReserve = calculerFondsReserve();
+
+  // 1ère confirmation
+  if (!confirm(
+    '⚠️ RÉINITIALISATION DES SOLDES\n\n' +
+    'Solde de trésorerie actuel : ' + fmt(solde) + '\n' +
+    'Fonds de réserve actuel : ' + fmt(fondsReserve) + '\n' +
+    entrees.length + ' entrée(s) et ' + sorties.length + ' sortie(s) enregistrées.\n\n' +
+    'Cette action va :\n' +
+    '1. Archiver automatiquement toutes les entrées et sorties actuelles (comme un rapport mensuel), pour ne rien perdre.\n' +
+    '2. Vider la caisse pour ramener le solde de trésorerie et le fonds de réserve à 0.\n\n' +
+    'Voulez-vous continuer ?'
+  )) return;
+
+  // 2ème confirmation : mot de passe du Président
+  const mdp = window.prompt('⛔ Confirmez avec votre mot de passe (Président) pour continuer :');
+  if (mdp === null) return;
+  const hash = await hashPassword(mdp);
+  if (hash !== getPasswordHash('president')) {
+    alert('❌ Mot de passe incorrect. Réinitialisation annulée.');
+    return;
+  }
+
+  // Archivage automatique de sécurité avant remise à zéro
+  const libelle = 'Avant RAZ du ' + new Date().toLocaleString('fr-FR');
+  const archiveAuto = {
+    id: Date.now(),
+    libelle,
+    note: 'Archive automatique créée avant une réinitialisation des soldes',
+    dateArchivage: todayStr(),
+    entrees: JSON.parse(JSON.stringify(entrees)),
+    sorties: JSON.parse(JSON.stringify(sorties)),
+    totalEntrees, totalSorties, solde
+  };
+  archives.push(archiveAuto);
+  fbUpsert('archives', archiveAuto);
+
+  // Remise à zéro effective
+  entrees = [];
+  sorties = [];
+  fbBulkReplace('entrees', []);
+  fbBulkReplace('sorties', []);
+
+  journaliser('Réinitialisation', `Soldes réinitialisés à 0 par ${session.nom} (archive automatique : "${libelle}")`);
+  sauvegarder();
+  renderAll();
+  renderArchives();
+  renderParamSoldeActuel();
+  alert('✅ Les soldes ont été réinitialisés à 0. Les données précédentes ont été archivées sous : "' + libelle + '"');
+}
+
+async function reinitialiserToutesLesDonnees() {
+  if (!session || session.role !== 'president') { alert('⛔ Seul le Président peut réinitialiser toutes les données.'); return; }
+
   // 1ère confirmation
   if (!confirm(
     '⚠️ ATTENTION — RÉINITIALISATION COMPLÈTE\n\n' +
@@ -5646,7 +5740,16 @@ function reinitialiserToutesLesDonnees() {
     'Avez-vous bien téléchargé une sauvegarde de secours avant de continuer ?'
   )) return;
 
-  // 2ème confirmation : saisie du mot de confirmation
+  // 2ème confirmation : mot de passe du Président
+  const mdp = window.prompt('⛔ Confirmez avec votre mot de passe (Président) pour continuer :');
+  if (mdp === null) return;
+  const hash = await hashPassword(mdp);
+  if (hash !== getPasswordHash('president')) {
+    alert('❌ Mot de passe incorrect. Réinitialisation annulée.');
+    return;
+  }
+
+  // 3ème confirmation : saisie du mot de confirmation
   const saisie = window.prompt(
     '⛔ DERNIÈRE CONFIRMATION REQUISE\n\n' +
     'Pour confirmer la réinitialisation, tapez exactement le mot :\n\n' +
