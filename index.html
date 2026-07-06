@@ -5153,8 +5153,10 @@ function imprimerRecu(sens, id) {
   `;
 
   document.getElementById('printArea').innerHTML = html;
-  rendreQRCode('recuQRCode', donneesQR(trouverMembreParNom(nomPersonne), { refDocument: numero, montant: op.montant, date: op.date }));
-  window.print();
+  attendreLibrairieQR(() => {
+    rendreQRCode('recuQRCode', donneesQR(trouverMembreParNom(nomPersonne), { refDocument: numero, montant: op.montant, date: op.date }));
+    window.print();
+  });
 
   // Marque le reçu comme imprimé (pour la notification "reçu non imprimé")
   if (!op.recuImprime) {
@@ -5804,8 +5806,10 @@ function imprimerFicheMembre(id) {
   `;
 
   document.getElementById('printArea').innerHTML = html;
-  rendreQRCode('ficheQRCode', donneesQR(m), 80);
-  window.print();
+  attendreLibrairieQR(() => {
+    rendreQRCode('ficheQRCode', donneesQR(m), 80);
+    window.print();
+  });
 }
 
 async function reinitialiserSoldeCaisse() {
@@ -6142,6 +6146,25 @@ function allerVersTab(tab) {
 // QR CODE — GÉNÉRATION (reçus, fiches membre) & RECHERCHE DE MEMBRE
 // ══════════════════════════════════════════════════════════════════════════
 
+// Calcule, à partir des entrées/sorties fournies (ou locales par défaut), le total des
+// cotisations versées et le total des prestations reçues par un membre
+// (comparaison de noms insensible aux accents).
+function calculerTotauxMembre(m, entreesSrc, sortiesSrc) {
+  entreesSrc = entreesSrc || entrees;
+  sortiesSrc = sortiesSrc || sorties;
+  if (!m) return { totalCotisations: 0, totalPrestations: 0 };
+  const cible1 = normRecherche(m.prenom + ' ' + m.nom);
+  const cible2 = normRecherche(m.nom + ' ' + m.prenom);
+  const estLeMembre = (nom) => { const n = normRecherche(nom); return n === cible1 || n === cible2; };
+  const totalCotisations = entreesSrc
+    .filter(e => estLeMembre(e.desc))
+    .reduce((acc, e) => acc + (Number(e.montant) || 0), 0);
+  const totalPrestations = sortiesSrc
+    .filter(s => estLeMembre(s.desc))
+    .reduce((acc, s) => acc + (Number(s.montant) || 0), 0);
+  return { totalCotisations, totalPrestations };
+}
+
 // Construit le texte encodé dans le QR code. Pour un membre reconnu, on inclut
 // toutes ses informations utiles ; sinon on encode uniquement la référence du document.
 function donneesQR(membre, extra) {
@@ -6164,15 +6187,34 @@ function donneesQR(membre, extra) {
   return JSON.stringify(Object.assign(infos, extra || {}));
 }
 
-// Dessine un QR code dans le conteneur donné (nécessite la librairie qrcode.js chargée)
+// Dessine un QR code dans le conteneur donné (nécessite la librairie qrcode.js chargée).
+// Si la librairie n'a pas eu le temps de se charger (connexion lente), affiche un repli
+// visuel avec la référence plutôt qu'une case vide.
 function rendreQRCode(containerId, texte, taille) {
   const el = document.getElementById(containerId);
   if (!el) return;
   el.innerHTML = '';
-  if (typeof QRCode === 'undefined') return; // pas de connexion internet au premier chargement
+  const t = taille || 66;
+  if (typeof QRCode === 'undefined') {
+    el.innerHTML = `<div style="width:${t}px;height:${t}px;display:flex;align-items:center;justify-content:center;font-size:7.5px;color:#999;text-align:center;padding:3px;box-sizing:border-box;line-height:1.2">QR indisponible<br>(hors-ligne)</div>`;
+    return;
+  }
   try {
-    new QRCode(el, { text: texte, width: taille || 66, height: taille || 66, correctLevel: QRCode.CorrectLevel.M });
-  } catch (e) { /* silencieux : le reçu reste utilisable sans QR */ }
+    new QRCode(el, { text: texte, width: t, height: t, correctLevel: QRCode.CorrectLevel.M });
+  } catch (e) {
+    el.innerHTML = `<div style="width:${t}px;height:${t}px;display:flex;align-items:center;justify-content:center;font-size:7.5px;color:#999;text-align:center;padding:3px;box-sizing:border-box">QR indisponible</div>`;
+  }
+}
+
+// Attend que la librairie de génération QR soit chargée (jusqu'à ~3s, utile sur connexion
+// lente) avant de finaliser un document imprimable, pour éviter un QR manquant sur le reçu.
+function attendreLibrairieQR(callback, tentative) {
+  tentative = tentative || 0;
+  if (typeof QRCode !== 'undefined' || tentative >= 20) {
+    callback();
+  } else {
+    setTimeout(() => attendreLibrairieQR(callback, tentative + 1), 150);
+  }
 }
 
 // Bloc QR + légende prêt à insérer dans un document imprimable
@@ -6241,26 +6283,88 @@ function onScanQRSuccess(texteDecode) {
     return;
   }
 
-  const m = membres.find(x => x.numero === data.numero);
-  if (!m) {
-    zone.innerHTML = `<div class="info-banner">⚠️ Membre ${data.numero} (${data.prenom || ''} ${data.nom || ''}) introuvable dans la base locale. Une synchronisation peut être nécessaire.</div>`;
+  const local = membres.find(x => x.numero === data.numero);
+  if (local) { afficherResultatScan(local); return; }
+
+  // Membre absent des données locales de cet appareil : on tente une vérification
+  // directe sur le serveur avant de conclure qu'il est introuvable (utile si ce
+  // téléphone n'a pas encore synchronisé ce membre, ou vient de scanner pour la
+  // première fois).
+  if (!firebaseOK || !db) {
+    zone.innerHTML = `<div class="info-banner">⚠️ Membre ${data.numero} (${data.prenom || ''} ${data.nom || ''}) introuvable sur cet appareil, et aucune connexion internet n'est disponible pour vérifier en ligne.<br><span style="font-size:11px;color:var(--muted)">Connectez ce téléphone à internet puis réessayez.</span></div>`;
     return;
   }
 
-  zone.innerHTML = `
-    <div class="card" style="margin:0;box-shadow:none;border:1.5px solid var(--gold)">
-      <div class="card-title">✅ Membre retrouvé</div>
-      <div class="detail-grid">
-        <div class="detail-field"><div class="df-label">Numéro</div><div class="df-value">${m.numero}</div></div>
-        <div class="detail-field"><div class="df-label">Nom & Prénom</div><div class="df-value">${m.prenom} ${m.nom}</div></div>
-        <div class="detail-field"><div class="df-label">Téléphone</div><div class="df-value">${m.telephone || '—'}</div></div>
-        <div class="detail-field"><div class="df-label">Statut</div><div class="df-value"><span class="badge-statut ${badgeStatutClass(m.statut)}">${badgeStatutLabel(m.statut)}</span></div></div>
-        <div class="detail-field"><div class="df-label">Quartier</div><div class="df-value">${m.quartier || '—'}</div></div>
-        <div class="detail-field"><div class="df-label">Fonction</div><div class="df-value">${m.fonction || '—'}</div></div>
-      </div>
-      <button class="btn btn-gold btn-small" style="margin-top:14px" onclick="ouvrirFicheDepuisScan(${m.id})">📇 Voir la fiche complète du membre</button>
-      <button class="btn btn-ghost btn-small" style="margin-top:14px" onclick="demarrerScanQR()">🔁 Scanner un autre QR code</button>
-    </div>`;
+  zone.innerHTML = `<div class="info-banner">🔎 Membre non présent sur cet appareil — vérification en ligne...</div>`;
+  db.ref('mtd_dorado/membres').orderByChild('numero').equalTo(data.numero).once('value')
+    .then(snap => {
+      const val = snap.val();
+      const trouve = val ? Object.values(val)[0] : null;
+      if (!trouve) {
+        zone.innerHTML = `<div class="info-banner">⚠️ Membre ${data.numero} (${data.prenom || ''} ${data.nom || ''}) introuvable, y compris en ligne. Vérifiez qu'il est bien enregistré dans l'application.</div>`;
+        return;
+      }
+      // On l'ajoute aux données locales de cet appareil pour la suite (fiche, futurs scans...),
+      // sans déclencher l'indicateur visible de sauvegarde (ce n'est pas une action de l'utilisateur).
+      membres.push(trouve);
+      try { localStorage.setItem('mtd_membres', JSON.stringify(membres)); } catch (e) {}
+      afficherResultatScan(trouve);
+    })
+    .catch(() => {
+      zone.innerHTML = `<div class="info-banner">⚠️ Impossible de vérifier en ligne (connexion instable). Réessayez dans quelques instants.</div>`;
+    });
+}
+
+// Affiche la carte de résultat pour un membre retrouvé (local ou en ligne), avec sa
+// situation financière calculée à partir des données les plus fraîches disponibles.
+function afficherResultatScan(m) {
+  const zone = document.getElementById('qrScanResult');
+  if (!zone) return;
+
+  const rendreCarte = (totalCotisations, totalPrestations) => {
+    const soldeNet = totalCotisations - totalPrestations;
+    zone.innerHTML = `
+      <div class="card" style="margin:0;box-shadow:none;border:1.5px solid var(--gold)">
+        <div class="card-title">✅ Membre retrouvé</div>
+        <div class="detail-grid">
+          <div class="detail-field"><div class="df-label">Numéro</div><div class="df-value">${m.numero}</div></div>
+          <div class="detail-field"><div class="df-label">Nom & Prénom</div><div class="df-value">${m.prenom} ${m.nom}</div></div>
+          <div class="detail-field"><div class="df-label">Téléphone</div><div class="df-value">${m.telephone || '—'}</div></div>
+          <div class="detail-field"><div class="df-label">Statut</div><div class="df-value"><span class="badge-statut ${badgeStatutClass(m.statut)}">${badgeStatutLabel(m.statut)}</span></div></div>
+          <div class="detail-field"><div class="df-label">Quartier</div><div class="df-value">${m.quartier || '—'}</div></div>
+          <div class="detail-field"><div class="df-label">Fonction</div><div class="df-value">${m.fonction || '—'}</div></div>
+        </div>
+        <div class="card-subtitle" style="margin-top:14px">💰 Situation financière</div>
+        <div class="membres-stats-row" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card green"><div class="stat-label">Cotisations versées</div><div class="stat-value" style="font-size:15px">${fmt(totalCotisations)}</div></div>
+          <div class="stat-card red"><div class="stat-label">Prestations reçues</div><div class="stat-value" style="font-size:15px">${fmt(totalPrestations)}</div></div>
+          <div class="stat-card ${soldeNet >= 0 ? 'gold' : 'red'}"><div class="stat-label">Solde net</div><div class="stat-value" style="font-size:15px">${fmt(soldeNet)}</div></div>
+        </div>
+        <button class="btn btn-gold btn-small" style="margin-top:14px" onclick="ouvrirFicheDepuisScan(${m.id})">📇 Voir la fiche complète du membre</button>
+        <button class="btn btn-ghost btn-small" style="margin-top:14px" onclick="demarrerScanQR()">🔁 Scanner un autre QR code</button>
+      </div>`;
+  };
+
+  // Si une connexion est disponible, on recalcule les totaux à partir des données
+  // serveur les plus à jour (fiable même si cet appareil n'a pas tout synchronisé) ;
+  // sinon on se rabat sur les données locales de l'appareil.
+  if (firebaseOK && db) {
+    Promise.all([
+      db.ref('mtd_dorado/entrees').once('value'),
+      db.ref('mtd_dorado/sorties').once('value'),
+    ]).then(([snapE, snapS]) => {
+      const entreesLive = normaliserCollection(snapE.val());
+      const sortiesLive = normaliserCollection(snapS.val());
+      const { totalCotisations, totalPrestations } = calculerTotauxMembre(m, entreesLive, sortiesLive);
+      rendreCarte(totalCotisations, totalPrestations);
+    }).catch(() => {
+      const { totalCotisations, totalPrestations } = calculerTotauxMembre(m);
+      rendreCarte(totalCotisations, totalPrestations);
+    });
+  } else {
+    const { totalCotisations, totalPrestations } = calculerTotauxMembre(m);
+    rendreCarte(totalCotisations, totalPrestations);
+  }
 }
 
 function ouvrirFicheDepuisScan(id) {
@@ -6869,8 +6973,10 @@ function imprimerHistoriqueMembre() {
     </div>
   `;
   document.getElementById('printArea').innerHTML = html;
-  rendreQRCode('histQRCode', donneesQR(m), 80);
-  window.print();
+  attendreLibrairieQR(() => {
+    rendreQRCode('histQRCode', donneesQR(m), 80);
+    window.print();
+  });
 }
 
 function ajouterCotisationRapide(id) {
