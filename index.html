@@ -830,13 +830,17 @@
   #loginScreen {
     position: fixed; inset: 0; z-index: 9999;
     background: linear-gradient(135deg, #0D1B2A 0%, #1C2E42 100%);
-    display: flex; align-items: center; justify-content: center;
+    display: flex; align-items: flex-start; justify-content: center;
+    overflow-y: auto;
+    padding: 48px 16px 32px;
+    -webkit-overflow-scrolling: touch;
   }
   .login-box {
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(201,168,76,0.25);
-    border-radius: 20px; padding: 44px 48px;
+    border-radius: 20px; padding: 40px 32px;
     width: 100%; max-width: 420px; position: relative; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
   }
   .login-box::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
@@ -4207,6 +4211,17 @@ onMoyenPaiementChange('in');
 onMoyenPaiementChange('out');
 onDemandeTypeChange();
 
+// Avance les compteurs d'entrées/sorties en évitant qu'un numéro déjà utilisé localement
+// ne soit réattribué (garde-fou si le compteur partagé n'était pas encore synchronisé).
+function avancerCompteurEntree() {
+  compteurEntrees++;
+  while (entrees.some(e => e.numero === compteurEntrees)) compteurEntrees++;
+}
+function avancerCompteurSortie() {
+  compteurSorties++;
+  while (sorties.some(s => s.numero === compteurSorties)) compteurSorties++;
+}
+
 // ── ENTREES ──
 function ajouterEntree() {
   if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas d\'ajouter des entrées.'); return; }
@@ -4224,7 +4239,7 @@ function ajouterEntree() {
     return;
   }
 
-  compteurEntrees++;
+  avancerCompteurEntree();
   const desc = membre;
   let typeLabel = type;
   if (type === 'Cotisation' && modePaiement === 'mensuelle') typeLabel = 'Cotisation mensuelle';
@@ -4281,7 +4296,7 @@ function ajouterSortie() {
     return;
   }
 
-  compteurSorties++;
+  avancerCompteurSortie();
   const objetComplet = [prestation, objet].filter(Boolean).join(' — ') || objet || prestation;
 
   const nouvelleSortie = { id: Date.now(), numero: compteurSorties, desc: beneficiaire, beneficiaire, objet: objetComplet, type, prestation, date, montant, moyenPaiement, telephonePaiement, fraisReels, tauxPriseEnCharge };
@@ -4345,7 +4360,7 @@ function ajouterEstimationCommeEntree() {
   const total = calculerCotisations();
   if (total <= 0) { alert('Le montant calculé doit être supérieur à 0.'); return; }
   if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas d\'ajouter des entrées.'); return; }
-  compteurEntrees++;
+  avancerCompteurEntree();
   const nouvelleEntree = {
     id: Date.now(),
     numero: compteurEntrees,
@@ -4996,9 +5011,11 @@ function renderRecus() {
   }
 }
 
+// Le numéro de référence du reçu est dérivé de l'identifiant unique (horodatage complet)
+// de l'entrée/sortie — jamais tronqué, pour garantir l'unicité de la référence imprimée.
 function genererNumeroRecu(sens, id) {
   const prefix = sens === 'in' ? 'ENT' : 'SOR';
-  return `MTD-${prefix}-${String(id).slice(-8)}`;
+  return `MTD-${prefix}-${id}`;
 }
 
 // Convertit un montant en toutes lettres (français), ex: 15000 → "quinze mille"
@@ -5495,9 +5512,18 @@ function imprimerArchive(id) {
 // GESTION DES MEMBRES
 // ══════════════════════════════════════════════════════════════════════════
 
+// Génère le prochain numéro de membre. Un garde-fou vérifie qu'aucun membre existant
+// (données déjà synchronisées sur cet appareil) n'utilise déjà ce numéro — utile si le
+// compteur partagé n'était pas encore à jour sur cet appareil (ex. juste après une
+// utilisation hors-ligne sur un autre téléphone).
 function genererNumeroMembre() {
   compteurMembres++;
-  return 'M' + String(compteurMembres).padStart(4, '0');
+  let numero = 'M' + String(compteurMembres).padStart(4, '0');
+  while (membres.some(m => m.numero === numero)) {
+    compteurMembres++;
+    numero = 'M' + String(compteurMembres).padStart(4, '0');
+  }
+  return numero;
 }
 
 function enregistrerMembre() {
@@ -6985,7 +7011,7 @@ function ajouterCotisationRapide(id) {
   if (!m) return;
   const montant = prompt(`Montant de la cotisation pour ${m.prenom} ${m.nom} (FCFA) :`, '3000');
   if (!montant || isNaN(montant)) return;
-  compteurEntrees++;
+  avancerCompteurEntree();
   entrees.push({
     id: Date.now(), numero: compteurEntrees,
     desc: m.prenom + ' ' + m.nom,
@@ -7325,7 +7351,7 @@ function validerDemande(id) {
   if (!confirm(`Approuver et verser la prestation ?\n\n${d.membreNom} — ${d.type}${d.typeSoin ? ' — ' + d.typeSoin : ''} — ${fmt(d.montant)}`)) return;
 
   // Créer la sortie automatiquement
-  compteurSorties++;
+  avancerCompteurSortie();
   const detailSoin = d.typeSoin ? `${d.typeSoin} (${d.tauxApplique}% de ${fmt(d.fraisReels)})` : '';
   const nouvelleSortie = {
     id: Date.now(), numero: compteurSorties,
