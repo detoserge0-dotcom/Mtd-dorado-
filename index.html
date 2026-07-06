@@ -5,6 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MTD — Gestion Financière</title>
 
+<script>
+  // Purge automatique du cache lors d'une nouvelle version de l'application.
+  // À incrémenter à chaque mise à jour importante pour forcer un rechargement propre
+  // sur tous les appareils, même si le Service Worker n'a pas encore détecté le changement.
+  (function() {
+    var VERSION_APP = 'v2026-07-06b';
+    try {
+      var versionVue = localStorage.getItem('mtd_app_version');
+      if (versionVue === VERSION_APP) return; // déjà à jour, rien à faire
+      var finaliser = function() {
+        try { localStorage.setItem('mtd_app_version', VERSION_APP); } catch (e) {}
+        location.reload();
+      };
+      var taches = [];
+      if ('serviceWorker' in navigator) {
+        taches.push(navigator.serviceWorker.getRegistrations().then(function(regs) {
+          return Promise.all(regs.map(function(r) { return r.unregister(); }));
+        }));
+      }
+      if ('caches' in window) {
+        taches.push(caches.keys().then(function(noms) {
+          return Promise.all(noms.map(function(n) { return caches.delete(n); }));
+        }));
+      }
+      if (taches.length) {
+        Promise.all(taches).then(finaliser).catch(finaliser);
+      } else {
+        try { localStorage.setItem('mtd_app_version', VERSION_APP); } catch (e) {}
+      }
+    } catch (e) { /* navigateur restreint : on continue normalement */ }
+  })();
+</script>
+
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0D1B2A">
