@@ -629,7 +629,9 @@
   .filter-row .field-group { flex: 1; min-width: 160px; margin-bottom: 0; }
 
   /* ── IMPRESSION REÇU ── */
+  @page { size: A4; margin: 6mm; }
   @media print {
+    html, body { height: auto !important; }
     body * { visibility: hidden; }
     #printArea, #printArea * { visibility: visible; }
     #printArea {
@@ -638,22 +640,28 @@
       top: 0; left: 0;
       width: 100%;
     }
+    /* Un seul reçu = une seule page, sans coupure au milieu */
+    .recu-doc, .recu-frame { page-break-inside: avoid; break-inside: avoid; }
+    .recu-doc { width: 100% !important; }
   }
 
   .recu-doc {
     width: 190mm;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 8mm;
+    padding: 6mm;
     font-family: 'Inter', sans-serif;
     color: #1A1209;
     position: relative;
+    box-sizing: border-box;
   }
   .recu-frame {
     border: 2.5px solid #0D1B2A;
     border-radius: 4px;
-    padding: 10mm 12mm 14mm;
+    padding: 8mm 11mm 10mm;
     position: relative;
     overflow: hidden;
+    box-sizing: border-box;
   }
   .recu-frame::before {
     content: '';
@@ -673,29 +681,29 @@
   .recu-header {
     background: #0D1B2A;
     color: #fff;
-    padding: 18px 24px;
+    padding: 15px 22px;
     border-radius: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
     border-bottom: 3px solid #C9A84C;
   }
   .recu-header .rh-brand { display: flex; align-items: center; gap: 14px; }
   .recu-header .rh-mark {
-    width: 44px; height: 44px;
+    width: 40px; height: 40px;
     border: 2px solid #C9A84C;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-family: 'Fraunces', serif; font-weight: 700; color: #C9A84C; font-size: 15px;
+    font-family: 'Fraunces', serif; font-weight: 700; color: #C9A84C; font-size: 14px;
   }
-  .recu-header h2 { font-family: 'Fraunces', serif; font-size: 17px; }
+  .recu-header h2 { font-family: 'Fraunces', serif; font-size: 16.5px; }
   .recu-header p { font-size: 10px; color: #C9A84C; letter-spacing: 1px; text-transform: uppercase; }
   .recu-header .rh-num { text-align: right; font-size: 11px; color: #C9A84C; font-family:'JetBrains Mono',monospace; }
   .recu-title {
     text-align: center;
     font-family: 'Fraunces', serif;
-    font-size: 22px;
+    font-size: 21px;
     font-weight: 700;
     color: #0D1B2A;
     margin-bottom: 4px;
@@ -705,15 +713,15 @@
     font-size: 12px;
     color: #7A6F5C;
     font-style: italic;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
   }
   .recu-type-badge {
     display: inline-block;
-    padding: 5px 16px;
+    padding: 5px 15px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 700;
-    margin: 0 auto 24px;
+    margin: 0 auto 18px;
     display: table;
   }
   .recu-type-badge.in { background: #E8F5EC; color: #3D8B5F; }
@@ -722,14 +730,14 @@
     border: 1.5px solid #E3DBC9;
     border-radius: 10px;
     overflow: hidden;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
   }
   .recu-row {
     display: flex;
     justify-content: space-between;
-    padding: 13px 20px;
+    padding: 11px 20px;
     border-bottom: 1px solid #E3DBC9;
-    font-size: 13px;
+    font-size: 12.5px;
   }
   .recu-row:last-child { border-bottom: none; }
   .recu-row:nth-child(even) { background: #FAF6EF; }
@@ -744,20 +752,20 @@
   .recu-amount-box {
     background: #0D1B2A;
     border-radius: 10px;
-    padding: 20px 24px;
+    padding: 16px 24px;
     text-align: center;
     margin-bottom: 10px;
   }
-  .recu-amount-box .ral { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #E8C97A; margin-bottom: 6px; }
-  .recu-amount-box .rav { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 700; color: #fff; }
+  .recu-amount-box .ral { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #E8C97A; margin-bottom: 5px; }
+  .recu-amount-box .rav { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 700; color: #fff; }
   .recu-montant-lettres {
     text-align: center; font-size: 11.5px; font-style: italic; color: #7A6F5C;
-    margin-bottom: 28px; padding: 0 20px;
+    margin-bottom: 20px; padding: 0 20px;
   }
   .recu-signatures {
     display: flex;
     justify-content: space-between;
-    margin-top: 40px;
+    margin-top: 26px;
     gap: 20px;
     align-items: flex-end;
   }
@@ -765,24 +773,31 @@
     flex: 1;
     text-align: center;
   }
-  .recu-sig .rs-label { font-size: 11px; font-weight: 700; color: #0D1B2A; margin-bottom: 36px; }
+  .recu-sig .rs-label { font-size: 11px; font-weight: 700; color: #0D1B2A; margin-bottom: 26px; line-height: 1.5; }
+  .recu-sig .rs-nom { display: block; font-size: 11.5px; font-weight: 700; color: #8A6D1D; margin-top: 2px; }
   .recu-sig .rs-line { border-top: 1px solid #999; padding-top: 6px; font-size: 10px; color: #7A6F5C; }
   .recu-cachet {
-    width: 88px; height: 88px; border-radius: 50%;
+    width: 74px; height: 74px; border-radius: 50%;
     border: 2px dashed #C9A84C; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center; text-align: center;
-    font-size: 9px; color: #C9A84C; text-transform: uppercase; letter-spacing: 0.5px;
+    font-size: 8.5px; color: #C9A84C; text-transform: uppercase; letter-spacing: 0.5px;
     font-weight: 700; line-height: 1.3; opacity: 0.75;
   }
   .recu-footer {
     text-align: center;
-    margin-top: 30px;
-    padding-top: 16px;
+    margin-top: 20px;
+    padding-top: 12px;
     border-top: 1px solid #E3DBC9;
     font-size: 10px;
     color: #7A6F5C;
   }
   .recu-footer .rf-ref { font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; color: #0D1B2A; margin-top: 4px; }
+  .recu-qr-wrap {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    margin-top: 14px; padding-top: 12px; border-top: 1px dashed #E3DBC9;
+  }
+  .recu-qr-box { background:#fff; padding:4px; border-radius:6px; border:1px solid #E3DBC9; line-height:0; }
+  .recu-qr-legende { font-size: 9.5px; color: #7A6F5C; text-align: left; max-width: 170px; line-height: 1.35; }
   .recap-section-title {
     font-family: 'Fraunces', serif;
     font-size: 15px;
@@ -1283,10 +1298,10 @@
      REÇU : MOT DE REMERCIEMENT
   ══════════════════════════════════════════════════════════════ */
   .recu-merci {
-    margin-top: 20px; padding: 14px 20px 0;
+    margin-top: 16px; padding: 12px 20px 0;
     border-top: 1px dashed #C9A84C;
-    font-family: 'Fraunces', serif; font-style: italic; font-size: 13px;
-    color: #0D1B2A; text-align: center; line-height:1.5;
+    font-family: 'Fraunces', serif; font-style: italic; font-size: 12.5px;
+    color: #0D1B2A; text-align: center; line-height:1.45;
   }
 </style>
 </head>
@@ -1299,6 +1314,9 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <!-- CHART.JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- QR CODE : génération (reçus/fiches) et scan (caméra) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 
 <!-- ÉCRAN DE CONNEXION -->
 <div id="loginScreen">
@@ -1431,6 +1449,7 @@
 
     <div class="nav-section-label">Membres</div>
     <button class="tab" data-tab="membres">👥 Membres</button>
+    <button class="tab" data-tab="scanner">📷 Scanner QR</button>
     <button class="tab" data-tab="cotisations">💳 Cotisations</button>
     <button class="tab" data-tab="calculateur">🧮 Calculateur cotisations</button>
 
@@ -1843,6 +1862,21 @@
     </div>
   </div>
 
+  <!-- PANEL: SCANNER QR -->
+  <div class="panel" id="panel-scanner">
+    <div class="card">
+      <div class="card-title">📷 Scanner un QR code membre</div>
+      <div class="card-subtitle">Scannez le QR code présent sur un reçu ou une fiche membre pour retrouver instantanément ses informations</div>
+      <div class="info-banner">💡 Le scan utilise la caméra de votre téléphone. Autorisez l'accès à la caméra si votre navigateur le demande.</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="btn btn-gold" id="btnDemarrerScan" onclick="demarrerScanQR()">📷 Démarrer le scan</button>
+        <button class="btn btn-ghost" id="btnArreterScan" style="display:none" onclick="arreterScanQR()">⏹️ Arrêter le scan</button>
+      </div>
+      <div id="qrReaderZone" style="max-width:360px;border-radius:12px;overflow:hidden"></div>
+      <div id="qrScanResult" style="margin-top:16px"></div>
+    </div>
+  </div>
+
   <!-- PANEL: CALCULATEUR -->
   <div class="panel" id="panel-calculateur">
     <div class="card">
@@ -2003,7 +2037,7 @@
         </div>
         <div></div>
         <div></div>
-        <button class="btn btn-add-in" onclick="ajouterEntree()">+ Ajouter</button>
+        <button class="btn btn-add-in" id="btnAddEntree" onclick="ajouterEntree()">+ Ajouter</button>
       </div>
 
       <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
@@ -2099,7 +2133,7 @@
         </div>
         <div></div>
         <div></div>
-        <button class="btn btn-add-out" onclick="ajouterSortie()">+ Ajouter</button>
+        <button class="btn btn-add-out" id="btnAddSortie" onclick="ajouterSortie()">+ Ajouter</button>
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
@@ -2262,7 +2296,7 @@
       <div class="card-title">Tableau des rôles et permissions</div>
       <div class="card-subtitle">Récapitulatif des accès par rôle dans l'outil MTD — modifiable par le Président dans Paramètres</div>
       <table class="data-table">
-        <thead><tr><th>Rôle</th><th>Ajouter</th><th>Supprimer</th><th>Gérer rôles & mots de passe</th><th>Lire</th></tr></thead>
+        <thead><tr><th>Rôle</th><th>Membres</th><th>Réunions</th><th>Finances</th><th>Rôles & mots de passe</th><th>Lire</th></tr></thead>
         <tbody id="tableauRolesJournalBody"></tbody>
       </table>
       <div style="margin-top:16px;padding:12px 16px;background:var(--lgold, #F5EDD6);border-radius:10px;border-left:3px solid var(--gold);font-size:12.5px">
@@ -2627,6 +2661,30 @@
     </div>
 
     <div class="card">
+      <div class="card-title">✍️ Signataires officiels des reçus</div>
+      <div class="card-subtitle">Renseignez le nom des membres du CA en poste : il apparaîtra automatiquement sous « Nom & Signature » sur tous les reçus, fiches et documents imprimés — réservé au Président</div>
+      <div class="membre-form" style="grid-template-columns:repeat(4,1fr)">
+        <div class="field-group" style="margin-bottom:0">
+          <label class="field-label">👑 Président du C.A.</label>
+          <input type="text" class="field-input" id="paramSignPresident" placeholder="Ex: Kouassi Jean">
+        </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label class="field-label">💰 Trésorier Général</label>
+          <input type="text" class="field-input" id="paramSignTresorier" placeholder="Ex: Konan Marie">
+        </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label class="field-label">📝 Secrétaire Général</label>
+          <input type="text" class="field-input" id="paramSignSecretaire" placeholder="Ex: Yao Paul">
+        </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label class="field-label">🔍 Comité de Contrôle</label>
+          <input type="text" class="field-input" id="paramSignControleur" placeholder="Ex: Aka Solange">
+        </div>
+      </div>
+      <button class="btn btn-gold" onclick="enregistrerParametresSignataires()">💾 Enregistrer les signataires</button>
+    </div>
+
+    <div class="card">
       <div class="card-title">🚨 Seuils d'alerte intelligents</div>
       <div class="card-subtitle">Le logiciel vous prévient automatiquement — retards de cotisation, caisse faible, dépassement de plafond, réunion proche, reçu non imprimé</div>
 
@@ -2809,17 +2867,44 @@ ecouterMotsDePasseFirebase();
 // GESTION DES RÔLES & PERMISSIONS
 // ══════════════════════════════════════════════════════════════════════════
 // Permissions par défaut (utilisées tant que le Président n'a rien personnalisé)
+// Permissions organisées par domaine :
+//  - peutGererMembres  : ajouter / modifier / retirer des membres
+//  - peutGererReunions : organiser / modifier / retirer des réunions du CA
+//  - peutGererFinances : ajouter / retirer / gérer les entrées, sorties et prestations
+//  - peutGererMdp      : gérer les mots de passe et les rôles (réservé au Président)
 const ROLES_DEFAUT = {
-  president:  { label: '👑 Président',          classe: 'role-president',  peutEcrire: true,  peutSupprimer: true,  peutGererMdp: true },
-  tresorier:  { label: '💰 Trésorier Général',  classe: 'role-tresorier',  peutEcrire: true,  peutSupprimer: true,  peutGererMdp: false },
-  secretaire: { label: '📝 Secrétaire Général', classe: 'role-secretaire', peutEcrire: false, peutSupprimer: false, peutGererMdp: false },
-  controleur: { label: '🔍 Contrôleur',         classe: 'role-controleur', peutEcrire: false, peutSupprimer: false, peutGererMdp: false },
+  president:  { label: '👑 Président',          classe: 'role-president',
+    peutGererMembres: true,  peutGererReunions: true,  peutGererFinances: true,  peutGererMdp: true },
+  tresorier:  { label: '💰 Trésorier Général',  classe: 'role-tresorier',
+    peutGererMembres: false, peutGererReunions: false, peutGererFinances: true,  peutGererMdp: false },
+  secretaire: { label: '📝 Secrétaire Général', classe: 'role-secretaire',
+    peutGererMembres: true,  peutGererReunions: true,  peutGererFinances: false, peutGererMdp: false },
+  controleur: { label: '🔍 Contrôleur',         classe: 'role-controleur',
+    peutGererMembres: false, peutGererReunions: false, peutGererFinances: false, peutGererMdp: false },
 };
 const PERMS_LISTE = [
-  { id: 'peutEcrire',    label: 'Ajouter / modifier (membres, entrées, sorties, réunions...)' },
-  { id: 'peutSupprimer', label: 'Supprimer (envoyer à la corbeille)' },
-  { id: 'peutGererMdp',  label: 'Gérer les mots de passe et les rôles (accès Président)' },
+  { id: 'peutGererMembres',  label: 'Membres — ajouter / retirer' },
+  { id: 'peutGererReunions', label: 'Réunions du CA — organiser / retirer' },
+  { id: 'peutGererFinances', label: 'Finances — entrées, sorties & prestations' },
+  { id: 'peutGererMdp',      label: 'Mots de passe et rôles (accès Président)' },
 ];
+// Rattache chaque type d'élément de la corbeille au domaine de permission correspondant.
+const DOMAINE_PAR_TYPE = { membre: 'peutGererMembres', reunion: 'peutGererReunions', entree: 'peutGererFinances', sortie: 'peutGererFinances', archive: 'peutGererFinances' };
+function peutAgirSurElementCorbeille(item) {
+  if (!item) return false;
+  if (getPermission('peutGererMdp')) return true; // le Président peut toujours tout restaurer/supprimer
+  const perm = DOMAINE_PAR_TYPE[item.type];
+  return perm ? getPermission(perm) : false;
+}
+// Libellé lisible des droits actifs de la session en cours (utilisé dans "Mon compte")
+function libellePermissionsSession() {
+  const parts = [];
+  if (getPermission('peutGererMembres'))  parts.push('👤 Membres');
+  if (getPermission('peutGererReunions')) parts.push('🗓️ Réunions');
+  if (getPermission('peutGererFinances')) parts.push('💰 Finances');
+  if (getPermission('peutGererMdp'))      parts.push('🔑 Administration');
+  return parts.length ? parts.join(' · ') : 'Lecture seule';
+}
 
 // Renvoie les permissions actives d'un rôle : la personnalisation du Président
 // (stockée localement + synchronisée) prend le pas sur les valeurs par défaut ci-dessus.
@@ -2905,8 +2990,9 @@ function renderTableauRolesJournal() {
   body.innerHTML = Object.keys(roles).map((role, i) => `
     <tr${i % 2 ? ' style="background:var(--cream)"' : ''}>
       <td><span class="session-role-badge ${roles[role].classe}" style="display:inline-block;padding:3px 10px">${roles[role].label}</span></td>
-      ${coche(roles[role].peutEcrire)}
-      ${coche(roles[role].peutSupprimer)}
+      ${coche(roles[role].peutGererMembres)}
+      ${coche(roles[role].peutGererReunions)}
+      ${coche(roles[role].peutGererFinances)}
       ${coche(roles[role].peutGererMdp)}
       <td style="color:var(--green);font-weight:700;text-align:center">✓</td>
     </tr>
@@ -2967,21 +3053,26 @@ function seDeconnecter() {
 
 function appliquerPermissions() {
   if (!session) return;
-  const peutEcrire = getPermission('peutEcrire');
-  const peutSupprimer = getPermission('peutSupprimer');
+  const peutMembres = getPermission('peutGererMembres');
+  const peutFinances = getPermission('peutGererFinances');
 
-  // Désactiver les boutons d'ajout pour lecture seule
-  ['btnSaveMembre'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = !peutEcrire;
-  });
+  // Désactiver le bouton d'ajout de membre si non autorisé
+  const btnMembre = document.getElementById('btnSaveMembre');
+  if (btnMembre) btnMembre.disabled = !peutMembres;
 
-  // Boutons Ajouter entrée/sortie
-  document.querySelectorAll('.btn-add-in, .btn-add-out').forEach(btn => {
-    btn.disabled = !peutEcrire;
-    btn.style.opacity = peutEcrire ? '1' : '0.4';
-    btn.title = peutEcrire ? '' : 'Accès en lecture seule pour votre rôle';
-  });
+  // Boutons Ajouter entrée/sortie (gérés par le domaine Finances)
+  const btnEntree = document.getElementById('btnAddEntree');
+  if (btnEntree) {
+    btnEntree.disabled = !peutFinances;
+    btnEntree.style.opacity = peutFinances ? '1' : '0.4';
+    btnEntree.title = peutFinances ? '' : 'Accès en lecture seule pour votre rôle';
+  }
+  const btnSortie = document.getElementById('btnAddSortie');
+  if (btnSortie) {
+    btnSortie.disabled = !peutFinances;
+    btnSortie.style.opacity = peutFinances ? '1' : '0.4';
+    btnSortie.title = peutFinances ? '' : 'Accès en lecture seule pour votre rôle';
+  }
 
   // Panneau Paramètres
   const adminCard = document.getElementById('paramAdminMdpCard');
@@ -3016,7 +3107,7 @@ function renderParamCompte() {
       <div class="detail-field"><div class="df-label">Nom</div><div class="df-value">${session.nom}</div></div>
       <div class="detail-field"><div class="df-label">Rôle</div><div class="df-value">${ROLES[session.role]?.label || session.role}</div></div>
       <div class="detail-field"><div class="df-label">Connecté depuis</div><div class="df-value">${new Date(session.heureConnexion).toLocaleString('fr-FR')}</div></div>
-      <div class="detail-field"><div class="df-label">Droits</div><div class="df-value">${getPermission('peutEcrire') ? 'Lecture / Écriture' : 'Lecture seule'}${getPermission('peutSupprimer') ? ' / Suppression' : ''}</div></div>
+      <div class="detail-field"><div class="df-label">Droits</div><div class="df-value">${libellePermissionsSession()}</div></div>
     </div>`;
 }
 
@@ -3079,7 +3170,7 @@ function getParametresContact() {
 }
 
 function enregistrerParametresContact() {
-  if (!getPermission('peutEcrire')) { alert('Votre rôle ne permet pas de modifier ces paramètres.'); return; }
+  if (!getPermission('peutGererMdp')) { alert('Votre rôle ne permet pas de modifier ces paramètres (réservé au Président).'); return; }
   const p = {
     telephones: document.getElementById('paramTelephones').value.trim() || '0585 208 642 / 0102 357 418',
     whatsapp: document.getElementById('paramWhatsapp').value.trim() || '0747 651 992',
@@ -3108,6 +3199,47 @@ function appliquerContactPartout() {
       ${p.telephones} · WhatsApp ${p.whatsapp} · ${p.email}<br>
       <span style="opacity:0.6">Les données sont sauvegardées automatiquement dans ce navigateur.</span>`;
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PARAMÈTRES — SIGNATAIRES OFFICIELS (noms affichés sur les reçus)
+// ══════════════════════════════════════════════════════════════════════════
+function getParametresSignataires() {
+  return JSON.parse(localStorage.getItem('mtd_params_signataires') || 'null') || {
+    president: '', tresorier: '', secretaire: '', controleur: ''
+  };
+}
+
+function enregistrerParametresSignataires() {
+  if (!getPermission('peutGererMdp')) { alert('Votre rôle ne permet pas de modifier ces paramètres (réservé au Président).'); return; }
+  const s = {
+    president: document.getElementById('paramSignPresident').value.trim(),
+    tresorier: document.getElementById('paramSignTresorier').value.trim(),
+    secretaire: document.getElementById('paramSignSecretaire').value.trim(),
+    controleur: document.getElementById('paramSignControleur').value.trim(),
+  };
+  localStorage.setItem('mtd_params_signataires', JSON.stringify(s));
+  if (firebaseOK && db) db.ref('mtd_dorado/parametres/signataires').set(s).catch(() => {});
+  journaliser('Paramètres', 'Noms des membres du CA (signataires des reçus) mis à jour');
+  alert('✅ Noms enregistrés. Ils apparaîtront désormais sur les reçus et fiches imprimés.');
+}
+
+function appliquerSignatairesPartout() {
+  const s = getParametresSignataires();
+  const p1 = document.getElementById('paramSignPresident'); if (p1) p1.value = s.president;
+  const p2 = document.getElementById('paramSignTresorier'); if (p2) p2.value = s.tresorier;
+  const p3 = document.getElementById('paramSignSecretaire'); if (p3) p3.value = s.secretaire;
+  const p4 = document.getElementById('paramSignControleur'); if (p4) p4.value = s.controleur;
+}
+
+// Construit le libellé de signature (rôle + nom du titulaire, si renseigné)
+function blocSignatureCA(role) {
+  const s = getParametresSignataires();
+  const labels = { president: 'Le Président du C.A.', tresorier: 'Le Trésorier Général', secretaire: 'Le Secrétaire Général', controleur: 'Le Comité de Contrôle' };
+  return blocSignaturePersonne(labels[role] || '', s[role]);
+}
+function blocSignaturePersonne(label, nom) {
+  return `${label}${nom ? `<span class="rs-nom">${nom}</span>` : ''}`;
 }
 
 function enregistrerPreferenceToasts() {
@@ -3721,9 +3853,13 @@ function renderDatalistMembres() {
 }
 
 function trouverMembreParNom(saisie) {
-  const s = (saisie || '').trim().toLowerCase();
-  if (!s) return null;
-  return membres.find(m => (m.prenom + ' ' + m.nom).toLowerCase() === s || (m.nom + ' ' + m.prenom).toLowerCase() === s) || null;
+  const cible = normRecherche(saisie);
+  if (!cible) return null;
+  return membres.find(m =>
+    normRecherche(m.prenom + ' ' + m.nom) === cible ||
+    normRecherche(m.nom + ' ' + m.prenom) === cible ||
+    normRecherche(m.numero) === cible
+  ) || null;
 }
 
 function onInDescChange() {
@@ -3815,9 +3951,9 @@ function envoyerCorbeille(type, data, label) {
 }
 
 function restaurerElement(id) {
-  if (!getPermission('peutEcrire')) { alert('Accès refusé.'); return; }
   const item = corbeille.find(x => x.id === id);
   if (!item) return;
+  if (!peutAgirSurElementCorbeille(item)) { alert('Votre rôle ne permet pas de restaurer ce type d\'élément.'); return; }
   const collection = collectionParType[item.type];
   if (item.type === 'entree') entrees.push(item.data);
   else if (item.type === 'sortie') sorties.push(item.data);
@@ -3835,9 +3971,9 @@ function restaurerElement(id) {
 }
 
 function supprimerDefinitivement(id) {
-  if (!getPermission('peutSupprimer')) { alert('Accès refusé.'); return; }
   const item = corbeille.find(x => x.id === id);
   if (!item) return;
+  if (!peutAgirSurElementCorbeille(item)) { alert('Votre rôle ne permet pas de supprimer définitivement ce type d\'élément.'); return; }
   if (!confirm(`⛔ Supprimer définitivement cet élément ?\n\n${item.label}\n\nCette action est IRRÉVERSIBLE.`)) return;
   corbeille = corbeille.filter(x => x.id !== id);
   fbRemove('corbeille', id);
@@ -3847,7 +3983,7 @@ function supprimerDefinitivement(id) {
 }
 
 function viderCorbeille() {
-  if (!getPermission('peutSupprimer')) { alert('Accès refusé.'); return; }
+  if (!getPermission('peutGererMdp')) { alert('Réservé au Président (la corbeille contient plusieurs types d\'éléments).'); return; }
   if (corbeille.length === 0) return;
   if (!confirm(`⛔ Vider définitivement la corbeille (${corbeille.length} élément(s)) ?\n\nCette action est IRRÉVERSIBLE.`)) return;
   corbeille = [];
@@ -3865,8 +4001,9 @@ function renderCorbeille() {
     return;
   }
   const typeLabels = { entree: '📥 Entrée', sortie: '📤 Sortie', membre: '👤 Membre', archive: '🗄️ Archive', reunion: '🗓️ Réunion' };
-  const peutAgir = getPermission('peutEcrire');
-  body.innerHTML = corbeille.map(c => `
+  body.innerHTML = corbeille.map(c => {
+    const peutAgir = peutAgirSurElementCorbeille(c);
+    return `
     <tr>
       <td><span class="corbeille-type-badge">${typeLabels[c.type] || c.type}</span></td>
       <td>${c.label}</td>
@@ -3874,10 +4011,11 @@ function renderCorbeille() {
       <td>${c.supprimePar}</td>
       <td style="white-space:nowrap">
         ${peutAgir ? `<button class="btn btn-add-in btn-small" onclick="restaurerElement(${c.id})">♻️ Restaurer</button>` : ''}
-        ${getPermission('peutSupprimer') ? `<button class="btn btn-ghost btn-small" onclick="supprimerDefinitivement(${c.id})">✗ Supprimer</button>` : ''}
+        ${peutAgir ? `<button class="btn btn-ghost btn-small" onclick="supprimerDefinitivement(${c.id})">✗ Supprimer</button>` : ''}
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function afficherIndicateurSauvegarde(horodatage) {
@@ -3969,6 +4107,8 @@ document.getElementById('mDateAdhesion').value = todayStr();
 // ── TABS ──
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
+    const tabActifAvant = document.querySelector('.tab.active')?.dataset.tab;
+    if (tabActifAvant === 'scanner' && tab.dataset.tab !== 'scanner' && typeof arreterScanQR === 'function') arreterScanQR();
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
@@ -3977,7 +4117,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'membres') renderMembres();
     if (tab.dataset.tab === 'corbeille') renderCorbeille();
     if (tab.dataset.tab === 'parametres') {
-      appliquerContactPartout(); renderParamCompte(); chargerDriveClientId();
+      appliquerContactPartout(); appliquerSignatairesPartout(); renderParamCompte(); chargerDriveClientId();
       const cb = document.getElementById('paramToastsActifs'); if (cb) cb.checked = toastsActifs();
       const ns = document.getElementById('notifPermStatus');
       if (ns && 'Notification' in window) {
@@ -4069,7 +4209,7 @@ onDemandeTypeChange();
 
 // ── ENTREES ──
 function ajouterEntree() {
-  if (!getPermission('peutEcrire')) { alert('Votre rôle ne permet pas d\'ajouter des entrées.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas d\'ajouter des entrées.'); return; }
   const membre = document.getElementById('inDesc').value.trim();
   const fonction = document.getElementById('inFonction').value.trim();
   const type = document.getElementById('inType').value;
@@ -4106,7 +4246,7 @@ function ajouterEntree() {
 }
 
 function supprimerEntree(id) {
-  if (!getPermission('peutSupprimer')) { alert('Votre rôle ne permet pas de supprimer des entrées.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas de supprimer des entrées.'); return; }
   const e = entrees.find(x => x.id === id);
   if (!e) return;
   if (!confirm(`⚠️ Supprimer cette entrée ?\n\n${e.desc} — ${fmt(e.montant)}\nDate : ${formatDate(e.date)}\n\nElle sera déplacée vers la corbeille.`)) return;
@@ -4123,7 +4263,7 @@ function supprimerEntree(id) {
 
 // ── SORTIES ──
 function ajouterSortie() {
-  if (!getPermission('peutEcrire')) { alert('Votre rôle ne permet pas d\'ajouter des sorties.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas d\'ajouter des sorties.'); return; }
   const beneficiaire = document.getElementById('outBeneficiaire').value.trim();
   const objet = document.getElementById('outObjet').value.trim();
   const type = document.getElementById('outType').value;
@@ -4162,7 +4302,7 @@ function ajouterSortie() {
 }
 
 function supprimerSortie(id) {
-  if (!getPermission('peutSupprimer')) { alert('Votre rôle ne permet pas de supprimer des sorties.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas de supprimer des sorties.'); return; }
   const s = sorties.find(x => x.id === id);
   if (!s) return;
   if (!confirm(`⚠️ Supprimer cette sortie ?\n\n${s.beneficiaire || s.desc} — ${fmt(s.montant)}\nCatégorie : ${s.type}\nDate : ${formatDate(s.date)}\n\nElle sera déplacée vers la corbeille.`)) return;
@@ -4204,7 +4344,7 @@ function calculerCotisations() {
 function ajouterEstimationCommeEntree() {
   const total = calculerCotisations();
   if (total <= 0) { alert('Le montant calculé doit être supérieur à 0.'); return; }
-  if (!getPermission('peutEcrire')) { alert('Votre rôle ne permet pas d\'ajouter des entrées.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas d\'ajouter des entrées.'); return; }
   compteurEntrees++;
   const nouvelleEntree = {
     id: Date.now(),
@@ -4938,8 +5078,8 @@ function imprimerRecu(sens, id) {
   const valeurFonction = isIn
     ? (op.fonction || '—')
     : ([op.objet, op.prestation].filter(Boolean).join(' — ') || op.type || '—');
-  const sig1 = isIn ? 'Le Trésorier Général' : 'Le Trésorier Général';
-  const sig2 = isIn ? 'Le membre' : 'Le Président du C.A.';
+  const sig1 = blocSignatureCA('tresorier');
+  const sig2 = isIn ? blocSignaturePersonne('Le membre', op.desc) : blocSignatureCA('president');
   const nomPersonne = isIn ? op.desc : (op.beneficiaire || op.desc);
   const moyenPaiement = op.moyenPaiement || 'Espèces';
   const contact = getParametresContact();
@@ -5006,12 +5146,14 @@ function imprimerRecu(sens, id) {
             Document généré le ${formatDate(todayStr())} — Document à conserver
             <div class="rf-ref">RÉF. ${numero}</div>
           </div>
+          ${blocQRHtml('recuQRCode', `Scannez pour vérifier les informations du membre associé à ce reçu (réf. ${numero}).`)}
         </div>
       </div>
     </div>
   `;
 
   document.getElementById('printArea').innerHTML = html;
+  rendreQRCode('recuQRCode', donneesQR(trouverMembreParNom(nomPersonne), { refDocument: numero, montant: op.montant, date: op.date }));
   window.print();
 
   // Marque le reçu comme imprimé (pour la notification "reçu non imprimé")
@@ -5105,15 +5247,15 @@ function imprimerRecapitulatifCA() {
 
       <div class="recu-signatures">
         <div class="recu-sig">
-          <div class="rs-label">Le Trésorier Général</div>
+          <div class="rs-label">${blocSignatureCA('tresorier')}</div>
           <div class="rs-line">Nom & Signature</div>
         </div>
         <div class="recu-sig">
-          <div class="rs-label">Le Comité de Contrôle</div>
+          <div class="rs-label">${blocSignatureCA('controleur')}</div>
           <div class="rs-line">Nom & Signature</div>
         </div>
         <div class="recu-sig">
-          <div class="rs-label">Le Président du C.A.</div>
+          <div class="rs-label">${blocSignatureCA('president')}</div>
           <div class="rs-line">Nom & Signature</div>
         </div>
       </div>
@@ -5168,7 +5310,7 @@ function archiverMois() {
 }
 
 function supprimerArchive(id) {
-  if (!getPermission('peutSupprimer')) { alert('Votre rôle ne permet pas de supprimer des archives.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas de supprimer des archives.'); return; }
   const a = archives.find(x => x.id === id);
   if (!a) return;
   if (!confirm(`⚠️ Supprimer l'archive "${a.libelle}" ?\n\nSolde archivé : ${fmt(a.solde)}\nDate d'archivage : ${formatDate(a.dateArchivage)}\n\nElle sera déplacée vers la corbeille.`)) return;
@@ -5322,15 +5464,15 @@ function imprimerArchive(id) {
 
       <div class="recu-signatures">
         <div class="recu-sig">
-          <div class="rs-label">Le Trésorier Général</div>
+          <div class="rs-label">${blocSignatureCA('tresorier')}</div>
           <div class="rs-line">Nom & Signature</div>
         </div>
         <div class="recu-sig">
-          <div class="rs-label">Le Comité de Contrôle</div>
+          <div class="rs-label">${blocSignatureCA('controleur')}</div>
           <div class="rs-line">Nom & Signature</div>
         </div>
         <div class="recu-sig">
-          <div class="rs-label">Le Président du C.A.</div>
+          <div class="rs-label">${blocSignatureCA('president')}</div>
           <div class="rs-line">Nom & Signature</div>
         </div>
       </div>
@@ -5357,7 +5499,7 @@ function genererNumeroMembre() {
 }
 
 function enregistrerMembre() {
-  if (!getPermission('peutEcrire')) { alert('Votre rôle ne permet pas de modifier les membres.'); return; }
+  if (!getPermission('peutGererMembres')) { alert('Votre rôle ne permet pas de modifier les membres.'); return; }
   const nom = document.getElementById('mNom').value.trim();
   const prenom = document.getElementById('mPrenom').value.trim();
   const sexe = document.getElementById('mSexe').value;
@@ -5454,7 +5596,7 @@ function viderFormulaireMembre() {
 }
 
 function modifierMembre(id) {
-  if (!getPermission('peutEcrire')) { alert('Votre rôle ne permet pas de modifier les membres.'); return; }
+  if (!getPermission('peutGererMembres')) { alert('Votre rôle ne permet pas de modifier les membres.'); return; }
   const m = membres.find(x => x.id === id);
   if (!m) return;
   membreEnEdition = id;
@@ -5489,7 +5631,7 @@ function annulerEditionMembre() {
 }
 
 function supprimerMembre(id) {
-  if (!getPermission('peutSupprimer')) { alert('Votre rôle ne permet pas de supprimer des membres.'); return; }
+  if (!getPermission('peutGererMembres')) { alert('Votre rôle ne permet pas de supprimer des membres.'); return; }
   const m = membres.find(x => x.id === id);
   if (!m) return;
   if (!confirm(`⚠️ Supprimer la fiche de ${m.prenom} ${m.nom} ?\n\nElle sera déplacée vers la corbeille.`)) return;
@@ -5643,11 +5785,11 @@ function imprimerFicheMembre(id) {
 
       <div class="recu-signatures">
         <div class="recu-sig">
-          <div class="rs-label">Le Trésorier Général</div>
+          <div class="rs-label">${blocSignatureCA('tresorier')}</div>
           <div class="rs-line">Nom & Signature</div>
         </div>
         <div class="recu-sig">
-          <div class="rs-label">L'adhérent(e)</div>
+          <div class="rs-label">${blocSignaturePersonne("L'adhérent(e)", m.prenom + ' ' + m.nom)}</div>
           <div class="rs-line">Nom & Signature</div>
         </div>
       </div>
@@ -5657,10 +5799,12 @@ function imprimerFicheMembre(id) {
         ${contact.telephones} · WhatsApp ${contact.whatsapp} · ${contact.email}<br>
         Fiche générée le ${formatDate(todayStr())}
       </div>
+      ${blocQRHtml('ficheQRCode', `Scannez ce QR code pour accéder à toutes les informations de ${m.prenom} ${m.nom} (${m.numero}).`)}
     </div>
   `;
 
   document.getElementById('printArea').innerHTML = html;
+  rendreQRCode('ficheQRCode', donneesQR(m), 80);
   window.print();
 }
 
@@ -5993,6 +6137,145 @@ function allerVersTab(tab) {
   document.querySelector(`.tab[data-tab="${tab}"]`)?.click();
   toggleNotifDropdown(false);
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// QR CODE — GÉNÉRATION (reçus, fiches membre) & RECHERCHE DE MEMBRE
+// ══════════════════════════════════════════════════════════════════════════
+
+// Construit le texte encodé dans le QR code. Pour un membre reconnu, on inclut
+// toutes ses informations utiles ; sinon on encode uniquement la référence du document.
+function donneesQR(membre, extra) {
+  const infos = membre ? {
+    type: 'MTD-MEMBRE',
+    numero: membre.numero,
+    nom: membre.nom,
+    prenom: membre.prenom,
+    sexe: membre.sexe || '',
+    telephone: membre.telephone || '',
+    quartier: membre.quartier || '',
+    fonction: membre.fonction || '',
+    typeTravailleur: membre.typeTravailleur || '',
+    dateNaissance: membre.dateNaissance || '',
+    dateAdhesion: membre.dateAdhesion || '',
+    statut: membre.statut || '',
+    conjoint: membre.conjoint || '',
+    enfants: membre.enfants || 0,
+  } : { type: 'MTD-DOCUMENT' };
+  return JSON.stringify(Object.assign(infos, extra || {}));
+}
+
+// Dessine un QR code dans le conteneur donné (nécessite la librairie qrcode.js chargée)
+function rendreQRCode(containerId, texte, taille) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  if (typeof QRCode === 'undefined') return; // pas de connexion internet au premier chargement
+  try {
+    new QRCode(el, { text: texte, width: taille || 66, height: taille || 66, correctLevel: QRCode.CorrectLevel.M });
+  } catch (e) { /* silencieux : le reçu reste utilisable sans QR */ }
+}
+
+// Bloc QR + légende prêt à insérer dans un document imprimable
+function blocQRHtml(containerId, legende) {
+  return `
+    <div class="recu-qr-wrap">
+      <div class="recu-qr-box" id="${containerId}"></div>
+      <div class="recu-qr-legende">${legende}</div>
+    </div>`;
+}
+
+// ── SCANNER QR (caméra) ──
+let html5QrScannerActif = null;
+
+function demarrerScanQR() {
+  const resultZone = document.getElementById('qrScanResult');
+  if (resultZone) resultZone.innerHTML = '';
+  if (typeof Html5Qrcode === 'undefined') {
+    alert('Le module de scan n\'a pas pu se charger. Vérifiez votre connexion internet puis réessayez.');
+    return;
+  }
+  if (html5QrScannerActif) return;
+  html5QrScannerActif = new Html5Qrcode('qrReaderZone');
+  Html5Qrcode.getCameras().then(cameras => {
+    if (!cameras || !cameras.length) { alert('Aucune caméra détectée sur cet appareil.'); html5QrScannerActif = null; return; }
+    const camera = cameras.find(c => /back|rear|environment/i.test(c.label || '')) || cameras[cameras.length - 1];
+    html5QrScannerActif.start(
+      camera.id,
+      { fps: 10, qrbox: { width: 230, height: 230 } },
+      onScanQRSuccess,
+      () => {} // erreurs de lecture image par image : ignorées silencieusement
+    ).then(() => {
+      document.getElementById('btnDemarrerScan').style.display = 'none';
+      document.getElementById('btnArreterScan').style.display = '';
+    }).catch(err => {
+      alert('Impossible de démarrer la caméra : ' + err);
+      html5QrScannerActif = null;
+    });
+  }).catch(err => {
+    alert('Accès à la caméra refusé ou indisponible : ' + err);
+    html5QrScannerActif = null;
+  });
+}
+
+function arreterScanQR() {
+  if (!html5QrScannerActif) return;
+  html5QrScannerActif.stop()
+    .then(() => html5QrScannerActif.clear())
+    .catch(() => {})
+    .finally(() => { html5QrScannerActif = null; });
+  const btnStart = document.getElementById('btnDemarrerScan');
+  const btnStop = document.getElementById('btnArreterScan');
+  if (btnStart) btnStart.style.display = '';
+  if (btnStop) btnStop.style.display = 'none';
+}
+
+function onScanQRSuccess(texteDecode) {
+  arreterScanQR();
+  const zone = document.getElementById('qrScanResult');
+  if (!zone) return;
+  let data = null;
+  try { data = JSON.parse(texteDecode); } catch (e) { data = null; }
+
+  if (!data || data.type !== 'MTD-MEMBRE' || !data.numero) {
+    zone.innerHTML = `<div class="info-banner">⚠️ Ce QR code n'est pas reconnu comme une fiche membre MTD.<br><span style="font-size:11px;color:var(--muted)">Contenu lu : ${String(texteDecode).slice(0,150)}</span></div>`;
+    return;
+  }
+
+  const m = membres.find(x => x.numero === data.numero);
+  if (!m) {
+    zone.innerHTML = `<div class="info-banner">⚠️ Membre ${data.numero} (${data.prenom || ''} ${data.nom || ''}) introuvable dans la base locale. Une synchronisation peut être nécessaire.</div>`;
+    return;
+  }
+
+  zone.innerHTML = `
+    <div class="card" style="margin:0;box-shadow:none;border:1.5px solid var(--gold)">
+      <div class="card-title">✅ Membre retrouvé</div>
+      <div class="detail-grid">
+        <div class="detail-field"><div class="df-label">Numéro</div><div class="df-value">${m.numero}</div></div>
+        <div class="detail-field"><div class="df-label">Nom & Prénom</div><div class="df-value">${m.prenom} ${m.nom}</div></div>
+        <div class="detail-field"><div class="df-label">Téléphone</div><div class="df-value">${m.telephone || '—'}</div></div>
+        <div class="detail-field"><div class="df-label">Statut</div><div class="df-value"><span class="badge-statut ${badgeStatutClass(m.statut)}">${badgeStatutLabel(m.statut)}</span></div></div>
+        <div class="detail-field"><div class="df-label">Quartier</div><div class="df-value">${m.quartier || '—'}</div></div>
+        <div class="detail-field"><div class="df-label">Fonction</div><div class="df-value">${m.fonction || '—'}</div></div>
+      </div>
+      <button class="btn btn-gold btn-small" style="margin-top:14px" onclick="ouvrirFicheDepuisScan(${m.id})">📇 Voir la fiche complète du membre</button>
+      <button class="btn btn-ghost btn-small" style="margin-top:14px" onclick="demarrerScanQR()">🔁 Scanner un autre QR code</button>
+    </div>`;
+}
+
+function ouvrirFicheDepuisScan(id) {
+  document.querySelector('.tab[data-tab="membres"]')?.click();
+  const search = document.getElementById('mSearch');
+  const membre = membres.find(x => x.id === id);
+  if (search && membre) { search.value = membre.numero; }
+  renderMembres();
+  membresDepliees.add(id);
+  renderMembres();
+  setTimeout(() => {
+    document.querySelector(`#membresBody tr[data-search-id="${id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 80);
+}
+
 
 // ══════════════════════════════════════════════════════════════════════════
 // MOTEUR DE RECHERCHE GLOBALE
@@ -6582,14 +6865,16 @@ function imprimerHistoriqueMembre() {
       <div class="recu-title">HISTORIQUE DES OPÉRATIONS DU MEMBRE</div>
       <div class="recu-subtitle">Cotisations versées et prestations reçues</div>
       ${contenu}
+      ${blocQRHtml('histQRCode', `Scannez ce QR code pour retrouver toutes les informations de ${m.prenom} ${m.nom} (${m.numero}).`)}
     </div>
   `;
   document.getElementById('printArea').innerHTML = html;
+  rendreQRCode('histQRCode', donneesQR(m), 80);
   window.print();
 }
 
 function ajouterCotisationRapide(id) {
-  if (!getPermission('peutEcrire')) { alert('Accès refusé.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas d\'enregistrer des cotisations.'); return; }
   const m = membres.find(x => x.id === id);
   if (!m) return;
   const montant = prompt(`Montant de la cotisation pour ${m.prenom} ${m.nom} (FCFA) :`, '3000');
@@ -6767,7 +7052,7 @@ function renderTauxMedical() {
   const zones = document.querySelectorAll('.taux-medical-zone');
   if (!zones.length) return;
   const taux = getTauxMedical();
-  const peutModifier = getPermission('peutEcrire');
+  const peutModifier = getPermission('peutGererFinances');
   const html = `
     <table class="data-table">
       <thead><tr><th>Type de soin / Prestataire médical</th><th style="width:160px">Taux de prise en charge</th></tr></thead>
@@ -6796,7 +7081,7 @@ function renderPlafonds() {
   const zone = document.getElementById('plafondsZone');
   if (!zone) return;
   const plafonds = getPlafondsPrestations();
-  const peutModifier = getPermission('peutEcrire');
+  const peutModifier = getPermission('peutGererFinances');
   zone.innerHTML = `
     <table class="data-table">
       <thead><tr><th>Prestation</th><th style="width:180px">Plafond (FCFA)</th></tr></thead>
@@ -6818,7 +7103,7 @@ function renderPlafonds() {
 }
 
 function modifierPlafond(prestation, valeur) {
-  if (!getPermission('peutEcrire')) { alert('Votre rôle ne permet pas de modifier les plafonds.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas de modifier les plafonds.'); return; }
   const v = Math.max(0, parseInt(valeur) || 0);
   const plafonds = getPlafondsPrestations();
   plafonds[prestation] = v;
@@ -6829,7 +7114,7 @@ function modifierPlafond(prestation, valeur) {
 }
 
 function enregistrerSeuilSolde() {
-  if (!getPermission('peutEcrire')) { alert('Votre rôle ne permet pas de modifier ce seuil.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas de modifier ce seuil.'); return; }
   const v = Math.max(0, parseInt(document.getElementById('paramSeuilSolde').value) || 0);
   setSeuilAlerteSolde(v);
   journaliser('Paramètres', `Seuil d'alerte de fonds de caisse modifié : ${fmt(v)}`);
@@ -6838,7 +7123,7 @@ function enregistrerSeuilSolde() {
 }
 
 function enregistrerSeuilReserve() {
-  if (!getPermission('peutEcrire')) { alert('Votre rôle ne permet pas de modifier cet objectif.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas de modifier cet objectif.'); return; }
   const v = Math.max(0, parseInt(document.getElementById('paramSeuilReserve').value) || 0);
   setSeuilFondsReserve(v);
   journaliser('Paramètres', `Objectif de fonds de réserve modifié : ${fmt(v)}`);
@@ -6847,7 +7132,7 @@ function enregistrerSeuilReserve() {
 }
 
 function modifierTauxMedical(typeSoin, valeur) {
-  if (!getPermission('peutEcrire')) { alert('Votre rôle ne permet pas de modifier les taux.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas de modifier les taux.'); return; }
   const v = Math.max(0, Math.min(100, parseFloat(valeur) || 0));
   const taux = getTauxMedical();
   taux[typeSoin] = v;
@@ -6928,7 +7213,7 @@ function soumettreDemande() {
 }
 
 function validerDemande(id) {
-  if (!getPermission('peutEcrire')) { alert('Accès refusé.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas de valider des prestations.'); return; }
   const d = demandes.find(x => x.id === id);
   if (!d) return;
   if (!confirm(`Approuver et verser la prestation ?\n\n${d.membreNom} — ${d.type}${d.typeSoin ? ' — ' + d.typeSoin : ''} — ${fmt(d.montant)}`)) return;
@@ -6959,7 +7244,7 @@ function validerDemande(id) {
 }
 
 function rejeterDemande(id) {
-  if (!getPermission('peutEcrire')) { alert('Accès refusé.'); return; }
+  if (!getPermission('peutGererFinances')) { alert('Votre rôle ne permet pas de rejeter des prestations.'); return; }
   const d = demandes.find(x => x.id === id);
   if (!d) return;
   const raison = prompt('Raison du rejet (optionnel) :');
@@ -6992,7 +7277,7 @@ function renderDemandes() {
       <td style="font-family:monospace;font-weight:600">${fmt(d.montant)}</td>
       <td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${statutStyle[d.statut]||'var(--cream)'}">${d.statut}</span></td>
       <td style="white-space:nowrap">
-        ${d.statut==='En attente' && getPermission('peutEcrire') ? `
+        ${d.statut==='En attente' && getPermission('peutGererFinances') ? `
           <button class="btn btn-add-in btn-small" onclick="validerDemande(${d.id})">✓ Approuver</button>
           <button class="btn btn-ghost btn-small" onclick="rejeterDemande(${d.id})">✗ Rejeter</button>
         ` : `<span style="font-size:11px;color:var(--muted)">${d.validePar||'—'}</span>`}
@@ -7005,7 +7290,7 @@ function renderDemandes() {
 // RÉUNIONS CA
 // ══════════════════════════════════════════════════════════════════════════
 function enregistrerReunion() {
-  if (!getPermission('peutEcrire')) { alert('Accès refusé.'); return; }
+  if (!getPermission('peutGererReunions')) { alert('Votre rôle ne permet pas d\'organiser des réunions.'); return; }
   const titre = document.getElementById('reunionTitre')?.value.trim();
   const date  = document.getElementById('reunionDate')?.value;
   const lieu  = document.getElementById('reunionLieu')?.value.trim();
@@ -7027,7 +7312,7 @@ function enregistrerReunion() {
 }
 
 function supprimerReunion(id) {
-  if (!getPermission('peutSupprimer')) { alert('Accès refusé.'); return; }
+  if (!getPermission('peutGererReunions')) { alert('Votre rôle ne permet pas de retirer des réunions.'); return; }
   const r = reunions.find(x=>x.id===id);
   if (!r || !confirm(`Supprimer la réunion "${r.titre}" ? Elle sera déplacée vers la corbeille.`)) return;
   reunions = reunions.filter(x=>x.id!==id);
@@ -7060,8 +7345,8 @@ function imprimerPV(id) {
         <div class="recu-row" style="flex-direction:column;gap:6px"><span class="rk">Décisions / PV</span><span class="rv" style="white-space:pre-wrap">${r.pv||'—'}</span></div>
       </div>
       <div class="recu-signatures">
-        <div class="recu-sig"><div class="rs-label">Le Président</div><div class="rs-line">Signature</div></div>
-        <div class="recu-sig"><div class="rs-label">Le Secrétaire Général</div><div class="rs-line">Signature</div></div>
+        <div class="recu-sig"><div class="rs-label">${blocSignatureCA('president')}</div><div class="rs-line">Signature</div></div>
+        <div class="recu-sig"><div class="rs-label">${blocSignatureCA('secretaire')}</div><div class="rs-line">Signature</div></div>
       </div>
       <div class="recu-footer">MTD — Toumodi, Côte d'Ivoire — Document généré le ${formatDate(todayStr())}</div>
     </div>`;
@@ -7314,8 +7599,8 @@ function imprimerRapport(type) {
       <div class="recu-subtitle">${sousTitre}</div>
       ${corps}
       <div class="recu-signatures">
-        <div class="recu-sig"><div class="rs-label">Le Trésorier Général</div><div class="rs-line">Nom & Signature</div></div>
-        <div class="recu-sig"><div class="rs-label">Le Président du C.A.</div><div class="rs-line">Nom & Signature</div></div>
+        <div class="recu-sig"><div class="rs-label">${blocSignatureCA('tresorier')}</div><div class="rs-line">Nom & Signature</div></div>
+        <div class="recu-sig"><div class="rs-label">${blocSignatureCA('president')}</div><div class="rs-line">Nom & Signature</div></div>
       </div>
       <div class="recu-footer">
         MTD — Mutuelle des Travailleurs de Dorado · ${contact.localisation}<br>
@@ -7355,6 +7640,7 @@ document.querySelectorAll('.tab').forEach(tab => {
 renderAll();
 renderCorbeille();
 appliquerContactPartout();
+appliquerSignatairesPartout();
 
 // ══════════════════════════════════════════════════════════════════════════
 // PWA — Enregistrement du service worker, détection & application des MAJ
