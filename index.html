@@ -10,7 +10,7 @@
   // À incrémenter à chaque mise à jour importante pour forcer un rechargement propre
   // sur tous les appareils, même si le Service Worker n'a pas encore détecté le changement.
   (function() {
-    var VERSION_APP = 'v2026-07-06c';
+    var VERSION_APP = 'v2026-07-06d';
     try {
       var versionVue = localStorage.getItem('mtd_app_version');
       if (versionVue === VERSION_APP) return; // déjà à jour, rien à faire
@@ -3960,7 +3960,8 @@ function toggleSidebar(force) {
 function renderDatalistMembres() {
   const dl = document.getElementById('listeMembresNoms');
   if (!dl) return;
-  dl.innerHTML = membres.map(m => `<option value="${m.prenom} ${m.nom}"></option>`).join('');
+  const tries = [...membres].sort((a,b) => (a.prenom + ' ' + a.nom).localeCompare(b.prenom + ' ' + b.nom, 'fr', { sensitivity: 'base' }));
+  dl.innerHTML = tries.map(m => `<option value="${m.prenom} ${m.nom}"></option>`).join('');
 }
 
 function trouverMembreParNom(saisie) {
@@ -4513,7 +4514,7 @@ function renderEntrees() {
     afficherInfoMasquage('entreesMasqueesInfo', 'entreesBody', entreesMasquees.size, 'reafficherEntreesMasquees');
     return;
   }
-  const sorted = [...visibles].sort((a,b) => new Date(b.date) - new Date(a.date));
+  const sorted = [...visibles].sort((a,b) => (a.numero || 0) - (b.numero || 0));
   entreesVisiblesIds = sorted.map(e => e.id);
   majBoutonToutBascule('btnToggleAllEntrees', entreesDepliees, entreesVisiblesIds);
   body.innerHTML = sorted.length ? sorted.map(e => {
@@ -4686,7 +4687,7 @@ function renderSorties() {
     afficherInfoMasquage('sortiesMasqueesInfo', 'sortiesBody', sortiesMasquees.size, 'reafficherSortiesMasquees');
     return;
   }
-  const sorted = [...visibles].sort((a,b) => new Date(b.date) - new Date(a.date));
+  const sorted = [...visibles].sort((a,b) => (a.numero || 0) - (b.numero || 0));
 
   if (!groupe) {
     sortiesVisiblesIds = sorted.map(s => s.id);
@@ -5847,7 +5848,7 @@ function renderMembres() {
     );
   }
   if (filtreStatut) filtered = filtered.filter(m => m.statut === filtreStatut);
-  filtered.sort((a,b) => (a.nom + ' ' + a.prenom).localeCompare(b.nom + ' ' + b.prenom, 'fr', { sensitivity: 'base' }));
+  filtered.sort((a,b) => (a.prenom + ' ' + a.nom).localeCompare(b.prenom + ' ' + b.nom, 'fr', { sensitivity: 'base' }));
   membresVisiblesIds = filtered.map(m => m.id);
   majBoutonToutBascule('btnToggleAllMembres', membresDepliees, membresVisiblesIds);
 
@@ -6859,7 +6860,8 @@ function renderCotisations() {
   let nbPaye=0, nbRetard=0, nbAbsent=0, totalCollecte=0;
   const idsVisibles = [];
 
-  const rows = membres.map(m => {
+  const membresTries = [...membres].sort((a,b) => (a.prenom + ' ' + a.nom).localeCompare(b.prenom + ' ' + b.nom, 'fr', { sensitivity: 'base' }));
+  const rows = membresTries.map(m => {
     // Toutes les entrées de cotisation pour ce membre
     const paiements = entrees.filter(e =>
       e.type && e.type.includes('Cotisation') &&
@@ -7241,8 +7243,9 @@ function renderKPIs() {
 function renderDemandesSelect() {
   const sel = document.getElementById('demandeMembreId');
   if (!sel) return;
+  const tries = [...membres].sort((a,b) => (a.prenom + ' ' + a.nom).localeCompare(b.prenom + ' ' + b.nom, 'fr', { sensitivity: 'base' }));
   sel.innerHTML = '<option value="">— Sélectionner un membre —</option>' +
-    membres.map(m => `<option value="${m.id}">${m.prenom} ${m.nom} (${m.numero})</option>`).join('');
+    tries.map(m => `<option value="${m.id}">${m.prenom} ${m.nom} (${m.numero})</option>`).join('');
 }
 
 // ══════════════════════════════════════════════════════════════════════════
