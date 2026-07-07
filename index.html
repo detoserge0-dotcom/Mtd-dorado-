@@ -3018,6 +3018,34 @@ function getPasswordHash(role) {
   return localStorage.getItem('mtd_mdp_' + role) || MOTS_DE_PASSE[role];
 }
 
+// Ancien format de hash (sans sel), conservé uniquement pour la compatibilité
+// ascendante avec des mots de passe personnalisés enregistrés AVANT l'ajout du sel.
+async function hashPasswordAncien(str) {
+  const msgBuffer = new TextEncoder().encode(str);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Vérifie un mot de passe saisi contre le hash enregistré pour un rôle.
+// Essaie d'abord le format salé (actuel) ; si ça ne correspond pas, essaie
+// l'ancien format (sans sel) pour ne jamais casser un mot de passe personnalisé
+// enregistré avant l'ajout du sel — et migre alors silencieusement ce rôle vers
+// le format salé, pour que les prochaines connexions n'aient plus besoin du repli.
+async function verifierMotDePasse(saisie, role) {
+  const hashEnregistre = getPasswordHash(role);
+  const hashSale = await hashPassword(saisie);
+  if (hashSale === hashEnregistre) return true;
+
+  const hashAncien = await hashPasswordAncien(saisie);
+  if (hashAncien === hashEnregistre) {
+    localStorage.setItem('mtd_mdp_' + role, hashSale);
+    if (firebaseOK && db) db.ref('mtd_dorado/parametres/motsDePasse/' + role).set(hashSale).catch(() => {});
+    return true;
+  }
+  return false;
+}
+
 // Affiche/masque un mot de passe en cliquant sur l'icône œil
 function toggleMdpVisibilite(inputId, btn) {
   const input = document.getElementById(inputId);
@@ -3197,8 +3225,7 @@ async function seConnecter() {
     err.style.display = 'block'; return;
   }
 
-  const hash = await hashPassword(mdp);
-  const valide = hash === getPasswordHash(role);
+  const valide = await verifierMotDePasse(mdp, role);
 
   if (!valide) {
     err.textContent = 'Mot de passe incorrect pour ce rôle.';
@@ -3307,8 +3334,7 @@ async function changerMotDePasse() {
   const msgErreur = (t) => { zone.innerHTML = `<div style="padding:10px 14px;border-radius:10px;font-size:12.5px;font-weight:600;background:var(--red-light);color:var(--red)">${t}</div>`; };
 
   if (!actuel || !nouveau || !confirme) { msgErreur('Veuillez remplir tous les champs.'); return; }
-  const hashActuel = await hashPassword(actuel);
-  if (hashActuel !== getPasswordHash(session.role)) { msgErreur('Le mot de passe actuel est incorrect.'); return; }
+  if (!(await verifierMotDePasse(actuel, session.role))) { msgErreur('Le mot de passe actuel est incorrect.'); return; }
   if (nouveau.length < 6) { msgErreur('Le nouveau mot de passe doit contenir au moins 6 caractères.'); return; }
   if (nouveau !== confirme) { msgErreur('La confirmation ne correspond pas au nouveau mot de passe.'); return; }
 
@@ -6157,8 +6183,7 @@ async function reinitialiserSoldeCaisse() {
   // 2ème confirmation : mot de passe du Président
   const mdp = window.prompt('⛔ Confirmez avec votre mot de passe (Président) pour continuer :');
   if (mdp === null) return;
-  const hash = await hashPassword(mdp);
-  if (hash !== getPasswordHash('president')) {
+  if (!(await verifierMotDePasse(mdp, 'president'))) {
     alert('❌ Mot de passe incorrect. Réinitialisation annulée.');
     return;
   }
@@ -6208,8 +6233,7 @@ async function reinitialiserToutesLesDonnees() {
   // 2ème confirmation : mot de passe du Président
   const mdp = window.prompt('⛔ Confirmez avec votre mot de passe (Président) pour continuer :');
   if (mdp === null) return;
-  const hash = await hashPassword(mdp);
-  if (hash !== getPasswordHash('president')) {
+  if (!(await verifierMotDePasse(mdp, 'president'))) {
     alert('❌ Mot de passe incorrect. Réinitialisation annulée.');
     return;
   }
