@@ -3619,9 +3619,15 @@ function fbBulkReplace(collection, items) {
 // d'éviter les collisions de numéros lorsque deux personnes ajoutent en même temps.
 function fbSyncCompteurs() {
   if (!firebaseOK || !db) return;
-  db.ref('mtd_dorado/compteurs').set({
-    entrees: compteurEntrees, sorties: compteurSorties, membres: compteurMembres
-  }).catch(() => {});
+  // Transaction atomique : ne fait jamais reculer un compteur déjà plus avancé
+  // côté serveur (ex. un autre appareil a créé un membre entre-temps). Chaque
+  // sous-compteur est traité indépendamment pour éviter qu'un seul en retard
+  // n'écrase les deux autres qui sont à jour.
+  const cibles = { entrees: compteurEntrees, sorties: compteurSorties, membres: compteurMembres };
+  Object.keys(cibles).forEach(cle => {
+    db.ref('mtd_dorado/compteurs/' + cle).transaction(actuel => Math.max(actuel || 0, cibles[cle]))
+      .catch(() => {});
+  });
 }
 
 // Sauvegarde locale uniquement — les écritures Firebase se font désormais
@@ -5625,7 +5631,19 @@ function imprimerArchive(id) {
 // compteur partagé n'était pas encore à jour sur cet appareil (ex. juste après une
 // utilisation hors-ligne sur un autre téléphone).
 function genererNumeroMembre() {
-  compteurMembres++;
+  // Recalcule d'abord le plus grand numéro RÉELLEMENT utilisé dans les fiches
+  // membres actuellement chargées. Cela rend la génération auto-réparatrice :
+  // même si le compteur partagé a dérivé (import, restauration, longue période
+  // hors-ligne), on ne repart jamais en dessous du numéro le plus haut déjà attribué.
+  let maxExistant = 0;
+  membres.forEach(m => {
+    const match = /^M(\d+)$/.exec(m.numero || '');
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (n > maxExistant) maxExistant = n;
+    }
+  });
+  compteurMembres = Math.max(compteurMembres, maxExistant) + 1;
   let numero = 'M' + String(compteurMembres).padStart(4, '0');
   while (membres.some(m => m.numero === numero)) {
     compteurMembres++;
