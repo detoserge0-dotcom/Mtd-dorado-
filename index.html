@@ -1368,6 +1368,7 @@
 
 <!-- FIREBASE SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <!-- GOOGLE DRIVE (sauvegarde) -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -1892,6 +1893,14 @@
               <option value="Suspendu">Suspendu</option>
             </select>
           </div>
+          <div class="field-group" style="max-width:190px">
+            <label class="field-label">Trier par</label>
+            <select class="field-input" id="mSortBy" onchange="changerTri('membres', this.value)">
+              <option value="nom">Nom (A→Z)</option>
+              <option value="numero">Numéro</option>
+              <option value="date">Date d'adhésion</option>
+            </select>
+          </div>
         </div>
 
         <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
@@ -2108,7 +2117,15 @@
       </div>
       <div class="card-subtitle">Cliquez sur le titre pour afficher la liste</div>
       <div class="liste-corps-repliable">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+          <div class="field-group" style="max-width:190px;margin-bottom:0">
+            <label class="field-label">Trier par</label>
+            <select class="field-input" id="inSortBy" onchange="changerTri('entrees', this.value)">
+              <option value="date">Date</option>
+              <option value="nom">Membre (A→Z)</option>
+              <option value="numero">Numéro</option>
+            </select>
+          </div>
           <button class="btn btn-ghost btn-small" id="btnToggleAllEntrees" onclick="toggleTousEntrees()">🔽 Tout déplier</button>
         </div>
 
@@ -2215,7 +2232,17 @@
             <input type="checkbox" id="chkGroupeSorties" checked onchange="onToggleGroupeSorties()">
             Regrouper les prestations d'un même membre par mois
           </label>
-          <button class="btn btn-ghost btn-small" id="btnToggleAllSorties" onclick="toggleTousSorties()">🔽 Tout déplier</button>
+          <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap">
+            <div class="field-group" style="max-width:190px;margin-bottom:0">
+              <label class="field-label">Trier par</label>
+              <select class="field-input" id="outSortBy" onchange="changerTri('sorties', this.value)">
+                <option value="date">Date</option>
+                <option value="nom">Bénéficiaire (A→Z)</option>
+                <option value="numero">Numéro</option>
+              </select>
+            </div>
+            <button class="btn btn-ghost btn-small" id="btnToggleAllSorties" onclick="toggleTousSorties()">🔽 Tout déplier</button>
+          </div>
         </div>
 
         <table class="data-table">
@@ -2547,6 +2574,16 @@
       </div>
       <div class="card-subtitle">Cliquez sur le titre pour afficher la liste — le Président ou Trésorier peut approuver ou rejeter chaque demande</div>
       <div class="liste-corps-repliable">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+          <div class="field-group" style="max-width:190px;margin-bottom:0">
+            <label class="field-label">Trier par</label>
+            <select class="field-input" id="dSortBy" onchange="changerTri('demandes', this.value)">
+              <option value="date">Date</option>
+              <option value="nom">Membre (A→Z)</option>
+              <option value="numero">N° membre</option>
+            </select>
+          </div>
+        </div>
         <table class="data-table">
           <thead><tr><th>Date</th><th>Membre</th><th>Type</th><th>Montant</th><th>Statut</th><th>Action</th></tr></thead>
           <tbody id="demandesBody"><tr><td colspan="6" class="empty-state">Aucune demande en attente.</td></tr></tbody>
@@ -2600,7 +2637,14 @@
       </div>
       <div class="card-subtitle">Cliquez sur le titre pour afficher la liste</div>
       <div class="liste-corps-repliable">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+          <div class="field-group" style="max-width:190px;margin-bottom:0">
+            <label class="field-label">Trier par</label>
+            <select class="field-input" id="rSortBy" onchange="changerTri('reunions', this.value)">
+              <option value="date">Date</option>
+              <option value="nom">Titre (A→Z)</option>
+            </select>
+          </div>
           <button class="btn btn-ghost btn-small" id="btnToggleAllReunions" onclick="toggleTousReunions()">🔽 Tout déplier</button>
         </div>
         <table class="data-table">
@@ -2904,6 +2948,20 @@ try {
   firebase.initializeApp(firebaseConfig);
   db = firebase.database();
   firebaseOK = true;
+
+  // Connexion anonyme obligatoire : avec des règles de sécurité définies sur
+  // ".read"/".write": "auth != null" côté console Firebase, cela empêche
+  // toute personne connaissant simplement l'URL/apiKey de lire ou modifier
+  // la base sans passer par cette application. IMPORTANT : ce mécanisme ne
+  // fonctionne que si l'authentification anonyme est activée dans la
+  // console Firebase (Authentication → Sign-in method → Anonyme) ET que les
+  // règles de la Realtime Database sont bien mises à jour en conséquence.
+  if (firebase.auth) {
+    firebase.auth().signInAnonymously().catch(err => {
+      console.log('Connexion anonyme Firebase impossible :', err.message);
+      setSyncStatus(false);
+    });
+  }
 } catch(e) {
   console.log('Firebase non configuré — mode local uniquement');
 }
@@ -2913,20 +2971,45 @@ try {
 // Les mots de passe par défaut sont : mtd2026 pour tous
 // Changez-les en modifiant les hashes ci-dessous
 // ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════
+// SÉCURITÉ : échappement systématique des données affichées via innerHTML
+// À utiliser sur TOUTE donnée saisie par un utilisateur (nom, téléphone, motif,
+// notes...) avant de l'insérer dans un template HTML, pour empêcher qu'un texte
+// du type <img onerror=...> ne s'exécute chez les autres utilisateurs.
+// ══════════════════════════════════════════════════════════════════════════
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Sel applicatif : rend les hashes inutilisables tels quels dans une table de
+// hashes précalculés génériques (rainbow table). Ce n'est PAS une protection
+// suffisante à elle seule si la base Firebase reste lisible publiquement —
+// voir les règles de sécurité Firebase recommandées séparément. Ce sel doit
+// rester identique pour tous, sinon les mots de passe déjà enregistrés ne
+// correspondront plus.
+const SEL_MTD = 'mtd-dorado-2026-sel-app';
+
 async function hashPassword(str) {
-  const msgBuffer = new TextEncoder().encode(str);
+  const msgBuffer = new TextEncoder().encode(SEL_MTD + ':' + str);
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Hashes SHA-256 des mots de passe (par défaut : "mtd2026" pour tous)
-// Pour changer un mot de passe, calculez son SHA-256 et remplacez le hash
+// Hashes SHA-256 (avec sel applicatif) des mots de passe par défaut : "mtd2026"
+// Pour changer un mot de passe, utilisez l'écran Paramètres → Mon compte, qui
+// recalcule le hash correctement salé. Ne remplacez pas ces valeurs à la main.
 const MOTS_DE_PASSE = {
-  president:  'ed47a8cc2d621f42268ada3c7f8d3bf3c8d1dd8e7e329936df5b6d9856f72e3c', // mtd2026
-  tresorier:  'ed47a8cc2d621f42268ada3c7f8d3bf3c8d1dd8e7e329936df5b6d9856f72e3c', // mtd2026
-  secretaire: 'ed47a8cc2d621f42268ada3c7f8d3bf3c8d1dd8e7e329936df5b6d9856f72e3c', // mtd2026
-  controleur: 'ed47a8cc2d621f42268ada3c7f8d3bf3c8d1dd8e7e329936df5b6d9856f72e3c', // mtd2026
+  president:  'e37b2771edfe786a9f912b28d795ac2d50eaceb3aa706b337c308708df921435', // mtd2026 (salé)
+  tresorier:  'e37b2771edfe786a9f912b28d795ac2d50eaceb3aa706b337c308708df921435', // mtd2026 (salé)
+  secretaire: 'e37b2771edfe786a9f912b28d795ac2d50eaceb3aa706b337c308708df921435', // mtd2026 (salé)
+  controleur: 'e37b2771edfe786a9f912b28d795ac2d50eaceb3aa706b337c308708df921435', // mtd2026 (salé)
 };
 
 // Retourne le hash actif d'un rôle : un mot de passe personnalisé (Paramètres)
@@ -3626,7 +3709,7 @@ function fbSyncCompteurs() {
   const cibles = { entrees: compteurEntrees, sorties: compteurSorties, membres: compteurMembres };
   Object.keys(cibles).forEach(cle => {
     db.ref('mtd_dorado/compteurs/' + cle).transaction(actuel => Math.max(actuel || 0, cibles[cle]))
-      .catch(() => {});
+      .catch(() => setSyncStatus(false));
   });
 }
 
@@ -3682,8 +3765,8 @@ function renderJournal(items) {
   zone.innerHTML = items.map(i => `
     <div class="journal-item">
       <span class="ji-time">${i.heure || ''}</span>
-      <span class="ji-role">${i.auteur}</span>
-      <span class="ji-msg">${i.message}</span>
+      <span class="ji-role">${escapeHtml(i.auteur)}</span>
+      <span class="ji-msg">${escapeHtml(i.message)}</span>
       <button class="ji-del" title="Supprimer cette ligne" onclick="supprimerJournalEntree(${i.ts})">✕</button>
     </div>
   `).join('');
@@ -3715,7 +3798,7 @@ function afficherToast(auteur, role, message) {
   const log = document.getElementById('activityLog');
   const toast = document.createElement('div');
   toast.className = 'activity-toast';
-  toast.innerHTML = `<span class="at-role">${auteur} (${role})</span><br><span>${message}</span>`;
+  toast.innerHTML = `<span class="at-role">${escapeHtml(auteur)} (${escapeHtml(role)})</span><br><span>${escapeHtml(message)}</span>`;
   log.appendChild(toast);
   setTimeout(() => toast.remove(), 5000);
 }
@@ -3746,6 +3829,50 @@ let reunionsDepliees = new Set();
 let reunionsVisiblesIds = [];
 let entreesMasquees = new Set(JSON.parse(localStorage.getItem('mtd_entrees_masquees') || '[]'));
 let sortiesMasquees = new Set(JSON.parse(localStorage.getItem('mtd_sorties_masquees') || '[]'));
+
+// ══════════════════════════════════════════════════════════════════════════
+// TRI DES LISTES — mémorisé par panel dans localStorage
+// ══════════════════════════════════════════════════════════════════════════
+const TRI_PAR_DEFAUT = { membres: 'nom', entrees: 'date', sorties: 'date', demandes: 'date', reunions: 'date' };
+const RENDER_PAR_PANEL = {}; // rempli plus bas une fois les fonctions render déclarées
+let triActuel = {};
+Object.keys(TRI_PAR_DEFAUT).forEach(p => {
+  triActuel[p] = localStorage.getItem('mtd_tri_' + p) || TRI_PAR_DEFAUT[p];
+});
+
+function changerTri(panel, valeur) {
+  triActuel[panel] = valeur;
+  localStorage.setItem('mtd_tri_' + panel, valeur);
+  if (RENDER_PAR_PANEL[panel]) RENDER_PAR_PANEL[panel]();
+}
+
+// Applique la valeur mémorisée au <select> affiché, sans redéclencher onchange
+// (utile car les selects sont recréés à chaque render du panel Paramètres/onglets).
+function syncSelecteurTri(panel, selectId) {
+  const el = document.getElementById(selectId);
+  if (el) el.value = triActuel[panel];
+}
+
+// Tri générique et tolérant : chaîne comparée avec localeCompare (FR, insensible
+// à la casse/accents), nombre comparé numériquement, date comparée chronologiquement.
+function comparerTri(critere) {
+  return (valA, valB) => {
+    if (critere === 'numero') {
+      return String(valA || '').localeCompare(String(valB || ''), undefined, { numeric: true, sensitivity: 'base' });
+    }
+    if (critere === 'date') {
+      return new Date(valA || 0) - new Date(valB || 0);
+    }
+    return String(valA || '').localeCompare(String(valB || ''), 'fr', { sensitivity: 'base' });
+  };
+}
+Object.assign(RENDER_PAR_PANEL, {
+  membres: () => renderMembres(),
+  entrees: () => renderEntrees(),
+  sorties: () => renderSorties(),
+  demandes: () => renderDemandes(),
+  reunions: () => renderReunions(),
+});
 
 function fbSyncMasques() {
   if (!firebaseOK || !db) return;
@@ -3970,14 +4097,32 @@ function renderDatalistMembres() {
   dl.innerHTML = tries.map(m => `<option value="${m.prenom} ${m.nom}"></option>`).join('');
 }
 
+// Retrouve un membre à partir d'un texte libre (nom saisi dans un champ entrée/sortie).
+// Essaie d'abord une correspondance exacte, puis une correspondance tolérante
+// (texte en trop avant/après le nom, ex. "Jean Kouassi - juillet") afin que le
+// QR code du reçu retrouve bien les infos du membre même si le texte n'a pas
+// été choisi précisément dans la liste déroulante.
 function trouverMembreParNom(saisie) {
   const cible = normRecherche(saisie);
   if (!cible) return null;
-  return membres.find(m =>
+
+  // 1) Correspondance exacte (comportement d'origine)
+  let trouve = membres.find(m =>
     normRecherche(m.prenom + ' ' + m.nom) === cible ||
     normRecherche(m.nom + ' ' + m.prenom) === cible ||
     normRecherche(m.numero) === cible
-  ) || null;
+  );
+  if (trouve) return trouve;
+
+  // 2) Correspondance tolérante : le nom complet du membre apparaît quelque
+  // part dans le texte saisi (ou l'inverse), même entouré d'autres mots.
+  trouve = membres.find(m => {
+    const nomPrenom = normRecherche(m.prenom + ' ' + m.nom);
+    const prenomNom = normRecherche(m.nom + ' ' + m.prenom);
+    if (!nomPrenom.trim()) return false;
+    return cible.includes(nomPrenom) || cible.includes(prenomNom) || nomPrenom.includes(cible) || prenomNom.includes(cible);
+  });
+  return trouve || null;
 }
 
 function onInDescChange() {
@@ -4510,6 +4655,7 @@ function calculerSimulation() {
 
 // ── RENDER ──
 function renderEntrees() {
+  syncSelecteurTri('entrees', 'inSortBy');
   const body = document.getElementById('entreesBody');
   const toutesLesEntrees = entrees;
   const visibles = toutesLesEntrees.filter(e => !entreesMasquees.has(e.id));
@@ -4520,7 +4666,11 @@ function renderEntrees() {
     afficherInfoMasquage('entreesMasqueesInfo', 'entreesBody', entreesMasquees.size, 'reafficherEntreesMasquees');
     return;
   }
-  const sorted = [...visibles].sort((a,b) => (a.numero || 0) - (b.numero || 0));
+  const critereE = triActuel.entrees;
+  const cmpE = comparerTri(critereE);
+  const sorted = [...visibles].sort((a,b) => critereE === 'nom' ? cmpE(a.desc, b.desc)
+    : critereE === 'date' ? cmpE(a.date, b.date)
+    : cmpE(a.numero, b.numero));
   entreesVisiblesIds = sorted.map(e => e.id);
   majBoutonToutBascule('btnToggleAllEntrees', entreesDepliees, entreesVisiblesIds);
   body.innerHTML = sorted.length ? sorted.map(e => {
@@ -4529,8 +4679,8 @@ function renderEntrees() {
     <tr class="row-toggle ${ouvert ? 'open' : ''}" data-search-id="${e.id}" onclick="toggleEntreeDetail(${e.id})">
       <td><span class="chevron">▶</span>${e.numero ?? ''}</td>
       <td>${formatDate(e.date)}</td>
-      <td>${e.desc}</td>
-      <td>${e.fonction || '—'}</td>
+      <td>${escapeHtml(e.desc)}</td>
+      <td>${escapeHtml(e.fonction) || '—'}</td>
       <td><span class="badge ${inBadge[e.type]}">${e.typeLabel || e.type}</span></td>
       <td class="amount-cell in">+${fmt(e.montant)}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
@@ -4543,8 +4693,8 @@ function renderEntrees() {
       <td colspan="7">
         <div class="detail-grid">
           <div class="detail-field"><div class="df-label">Moyen de paiement</div><div class="df-value">${payIcon[e.moyenPaiement]||''} ${e.moyenPaiement || 'Espèces'}</div></div>
-          <div class="detail-field"><div class="df-label">Téléphone</div><div class="df-value">${e.telephonePaiement || '—'}</div></div>
-          <div class="detail-field"><div class="df-label">Type complet</div><div class="df-value">${e.typeLabel || e.type}</div></div>
+          <div class="detail-field"><div class="df-label">Téléphone</div><div class="df-value">${escapeHtml(e.telephonePaiement) || '—'}</div></div>
+          <div class="detail-field"><div class="df-label">Type complet</div><div class="df-value">${escapeHtml(e.typeLabel) || escapeHtml(e.type)}</div></div>
           <div class="detail-field"><div class="df-label">Enregistré le</div><div class="df-value">${new Date(e.id).toLocaleString('fr-FR')}</div></div>
         </div>
         <div class="detail-actions">
@@ -4589,8 +4739,8 @@ function rendreLigneSortieUnique(s) {
     <tr class="row-toggle ${ouvert ? 'open' : ''}" data-search-id="${s.id}" onclick="toggleSortieDetail(${s.id})">
       <td><span class="chevron">▶</span>${s.numero ?? ''}</td>
       <td>${formatDate(s.date)}</td>
-      <td>${s.beneficiaire || s.desc}</td>
-      <td>${s.objet || '—'}</td>
+      <td>${escapeHtml(s.beneficiaire) || escapeHtml(s.desc)}</td>
+      <td>${escapeHtml(s.objet) || '—'}</td>
       <td><span class="badge ${catBadge[s.type]}">${s.type}</span></td>
       <td class="amount-cell out">-${fmt(s.montant)}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
@@ -4603,8 +4753,8 @@ function rendreLigneSortieUnique(s) {
       <td colspan="7">
         <div class="detail-grid">
           <div class="detail-field"><div class="df-label">Moyen d'envoi</div><div class="df-value">${payIcon[s.moyenPaiement]||''} ${s.moyenPaiement || 'Espèces'}</div></div>
-          <div class="detail-field"><div class="df-label">Téléphone bénéficiaire</div><div class="df-value">${s.telephonePaiement || '—'}</div></div>
-          <div class="detail-field"><div class="df-label">Précision prestation</div><div class="df-value">${s.prestation || '—'}</div></div>
+          <div class="detail-field"><div class="df-label">Téléphone bénéficiaire</div><div class="df-value">${escapeHtml(s.telephonePaiement) || '—'}</div></div>
+          <div class="detail-field"><div class="df-label">Précision prestation</div><div class="df-value">${escapeHtml(s.prestation) || '—'}</div></div>
           ${s.type === 'Médical' && s.fraisReels ? `
           <div class="detail-field"><div class="df-label">Frais médicaux réels</div><div class="df-value">${fmt(s.fraisReels)}</div></div>
           <div class="detail-field"><div class="df-label">Taux de prise en charge</div><div class="df-value">${s.tauxPriseEnCharge ?? 0}%</div></div>
@@ -4632,7 +4782,7 @@ function rendreLigneGroupeSortie(key, g) {
     <tr class="row-toggle ${ouvert ? 'open' : ''}" onclick="toggleSortieGroupeDetail('${key}')">
       <td><span class="chevron">▶</span>📦</td>
       <td>${moisLabel}</td>
-      <td>${g.nom}</td>
+      <td>${escapeHtml(g.nom)}</td>
       <td>${g.items.length} prestations</td>
       <td>${categories.map(c => `<span class="badge ${catBadge[c]}" style="margin-right:3px;margin-bottom:2px;display:inline-block">${c}</span>`).join('')}</td>
       <td class="amount-cell out">-${fmt(total)}</td>
@@ -4641,14 +4791,14 @@ function rendreLigneGroupeSortie(key, g) {
   const detail = ouvert ? `
     <tr class="detail-row">
       <td colspan="7">
-        <div class="card-subtitle" style="margin:0 0 10px 0">📦 ${g.items.length} prestations reçues par ${g.nom} — ${moisLabel}</div>
+        <div class="card-subtitle" style="margin:0 0 10px 0">📦 ${g.items.length} prestations reçues par ${escapeHtml(g.nom)} — ${moisLabel}</div>
         <table class="data-table" style="margin-bottom:0">
           <thead><tr><th>Date</th><th>Objet / Précision</th><th>Catégorie</th><th style="text-align:right">Montant</th><th></th></tr></thead>
           <tbody>
             ${itemsTries.map(s => `
             <tr onclick="event.stopPropagation()">
               <td>${formatDate(s.date)}</td>
-              <td>${calculerObjetSortie(s)}</td>
+              <td>${escapeHtml(calculerObjetSortie(s))}</td>
               <td><span class="badge ${catBadge[s.type]}">${s.type}</span></td>
               <td class="amount-cell out" style="text-align:right">-${fmt(s.montant)}</td>
               <td style="white-space:nowrap">
@@ -4675,6 +4825,7 @@ function onToggleGroupeSorties() {
 }
 
 function renderSorties() {
+  syncSelecteurTri('sorties', 'outSortBy');
   const body = document.getElementById('sortiesBody');
   const chk = document.getElementById('chkGroupeSorties');
   if (chk && !chk.dataset.init) {
@@ -4693,7 +4844,11 @@ function renderSorties() {
     afficherInfoMasquage('sortiesMasqueesInfo', 'sortiesBody', sortiesMasquees.size, 'reafficherSortiesMasquees');
     return;
   }
-  const sorted = [...visibles].sort((a,b) => (a.numero || 0) - (b.numero || 0));
+  const critereS = triActuel.sorties;
+  const cmpS = comparerTri(critereS);
+  const sorted = [...visibles].sort((a,b) => critereS === 'nom' ? cmpS(a.beneficiaire || a.desc, b.beneficiaire || b.desc)
+    : critereS === 'date' ? cmpS(a.date, b.date)
+    : cmpS(a.numero, b.numero));
 
   if (!groupe) {
     sortiesVisiblesIds = sorted.map(s => s.id);
@@ -5212,6 +5367,7 @@ function imprimerRecu(sens, id) {
   const sig1 = blocSignatureCA('tresorier');
   const sig2 = isIn ? blocSignaturePersonne('Le membre', op.desc) : blocSignatureCA('president');
   const nomPersonne = isIn ? op.desc : (op.beneficiaire || op.desc);
+  const membreLie = trouverMembreParNom(nomPersonne);
   const moyenPaiement = op.moyenPaiement || 'Espèces';
   const contact = getParametresContact();
 
@@ -5277,7 +5433,9 @@ function imprimerRecu(sens, id) {
             Document généré le ${formatDate(todayStr())} — Document à conserver
             <div class="rf-ref">RÉF. ${numero}</div>
           </div>
-          ${blocQRHtml('recuQRCode', `Scannez pour vérifier les informations du membre associé à ce reçu (réf. ${numero}).`)}
+          ${blocQRHtml('recuQRCode', membreLie
+            ? `Scannez pour vérifier les informations du membre associé à ce reçu (réf. ${numero}).`
+            : `⚠️ Aucun membre identifié pour "${escapeHtml(nomPersonne)}" — le QR ne contient que la référence du document. Vérifiez l'orthographe ou sélectionnez le nom dans la liste proposée.`)}
         </div>
       </div>
     </div>
@@ -5285,7 +5443,7 @@ function imprimerRecu(sens, id) {
 
   document.getElementById('printArea').innerHTML = html;
   attendreLibrairieQR(() => {
-    rendreQRCode('recuQRCode', donneesQR(trouverMembreParNom(nomPersonne), { refDocument: numero, montant: op.montant, date: op.date }));
+    rendreQRCode('recuQRCode', donneesQR(membreLie, { refDocument: numero, montant: op.montant, date: op.date }));
     window.print();
   });
 
@@ -5312,13 +5470,13 @@ function imprimerRecapitulatifCA() {
   const entreesRows = entrees.length === 0
     ? '<tr><td colspan="4" style="text-align:center;color:#999">Aucune entrée enregistrée</td></tr>'
     : [...entrees].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(e => `
-        <tr><td>${formatDate(e.date)}</td><td>${e.desc}</td><td>${e.type}</td><td style="text-align:right;font-weight:600;color:#3D8B5F">+${fmt(e.montant)}</td></tr>
+        <tr><td>${formatDate(e.date)}</td><td>${escapeHtml(e.desc)}</td><td>${escapeHtml(e.type)}</td><td style="text-align:right;font-weight:600;color:#3D8B5F">+${fmt(e.montant)}</td></tr>
       `).join('');
 
   const sortiesRows = sorties.length === 0
     ? '<tr><td colspan="4" style="text-align:center;color:#999">Aucune sortie enregistrée</td></tr>'
     : [...sorties].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(s => `
-        <tr><td>${formatDate(s.date)}</td><td>${s.desc}</td><td>${s.type}</td><td style="text-align:right;font-weight:600;color:#B84A3E">-${fmt(s.montant)}</td></tr>
+        <tr><td>${formatDate(s.date)}</td><td>${escapeHtml(s.desc)}</td><td>${escapeHtml(s.type)}</td><td style="text-align:right;font-weight:600;color:#B84A3E">-${fmt(s.montant)}</td></tr>
       `).join('');
 
   const catRows = cats.map(c => `
@@ -5529,13 +5687,13 @@ function imprimerArchive(id) {
   const entreesRows = a.entrees.length === 0
     ? '<tr><td colspan="4" style="text-align:center;color:#999">Aucune entrée enregistrée</td></tr>'
     : [...a.entrees].sort((x,y)=>new Date(y.date)-new Date(x.date)).map(e => `
-        <tr><td>${formatDate(e.date)}</td><td>${e.desc}${e.fonction ? ' — ' + e.fonction : ''}</td><td>${e.typeLabel || e.type}</td><td style="text-align:right;font-weight:600;color:#3D8B5F">+${fmt(e.montant)}</td></tr>
+        <tr><td>${formatDate(e.date)}</td><td>${escapeHtml(e.desc)}${e.fonction ? ' — ' + escapeHtml(e.fonction) : ''}</td><td>${escapeHtml(e.typeLabel) || escapeHtml(e.type)}</td><td style="text-align:right;font-weight:600;color:#3D8B5F">+${fmt(e.montant)}</td></tr>
       `).join('');
 
   const sortiesRows = a.sorties.length === 0
     ? '<tr><td colspan="4" style="text-align:center;color:#999">Aucune sortie enregistrée</td></tr>'
     : [...a.sorties].sort((x,y)=>new Date(y.date)-new Date(x.date)).map(s => `
-        <tr><td>${formatDate(s.date)}</td><td>${s.beneficiaire || s.desc}${s.objet ? ' — ' + s.objet : ''}</td><td>${s.type}</td><td style="text-align:right;font-weight:600;color:#B84A3E">-${fmt(s.montant)}</td></tr>
+        <tr><td>${formatDate(s.date)}</td><td>${escapeHtml(s.beneficiaire) || escapeHtml(s.desc)}${s.objet ? ' — ' + escapeHtml(s.objet) : ''}</td><td>${escapeHtml(s.type)}</td><td style="text-align:right;font-weight:600;color:#B84A3E">-${fmt(s.montant)}</td></tr>
       `).join('');
 
   const catRows = cats.map(c => `
@@ -5680,7 +5838,8 @@ function enregistrerMembre() {
   if (membreEnEdition !== null) {
     const idx = membres.findIndex(m => m.id === membreEnEdition);
     if (idx !== -1) {
-      membres[idx] = { ...membres[idx], nom, prenom, sexe, dateNaissance, telephone, quartier, fonction, typeTravailleur, dateAdhesion, statut, conjoint, enfants, numero: numero || membres[idx].numero, ayantsDroit: [...ayantsDroitTemp] };
+      membres[idx] = { ...membres[idx], nom, prenom, sexe, dateNaissance, telephone, quartier, fonction, typeTravailleur, dateAdhesion, statut, conjoint, enfants, numero: numero || membres[idx].numero, ayantsDroit: [...ayantsDroitTemp],
+        dernierModifiePar: session?.nom || '—', dernierModifieLe: new Date().toISOString() };
       fbUpsert('membres', membres[idx]);
     }
     membreEnEdition = null;
@@ -5819,22 +5978,23 @@ function renderMembreDetailRow(m) {
   const ayants = Array.isArray(m.ayantsDroit) ? m.ayantsDroit : [];
   const ayantsHtml = ayants.length === 0
     ? `<div class="adp-empty">Aucun ayant droit déclaré.${m.conjoint ? '' : ''}</div>`
-    : ayants.map(a => `<div class="adp-item"><span>👤 ${a.nom}</span><span class="adp-lien">${a.lien}</span></div>`).join('');
+    : ayants.map(a => `<div class="adp-item"><span>👤 ${escapeHtml(a.nom)}</span><span class="adp-lien">${escapeHtml(a.lien)}</span></div>`).join('');
 
   return `
     <tr class="detail-row">
       <td colspan="6">
         <div class="detail-flex">
           <div class="detail-grid">
-            <div class="detail-field"><div class="df-label">Sexe</div><div class="df-value">${m.sexe || '—'}</div></div>
+            <div class="detail-field"><div class="df-label">Sexe</div><div class="df-value">${escapeHtml(m.sexe) || '—'}</div></div>
             <div class="detail-field"><div class="df-label">Date de naissance</div><div class="df-value">${formatDate(m.dateNaissance)}</div></div>
-            <div class="detail-field"><div class="df-label">Téléphone</div><div class="df-value">${m.telephone || '—'}</div></div>
-            <div class="detail-field"><div class="df-label">Quartier / Ville</div><div class="df-value">${m.quartier || '—'}</div></div>
-            <div class="detail-field"><div class="df-label">Département / Fonction</div><div class="df-value">${m.fonction || '—'}</div></div>
-            <div class="detail-field"><div class="df-label">Type de travailleur</div><div class="df-value">${m.typeTravailleur || '—'}</div></div>
+            <div class="detail-field"><div class="df-label">Téléphone</div><div class="df-value">${escapeHtml(m.telephone) || '—'}</div></div>
+            <div class="detail-field"><div class="df-label">Quartier / Ville</div><div class="df-value">${escapeHtml(m.quartier) || '—'}</div></div>
+            <div class="detail-field"><div class="df-label">Département / Fonction</div><div class="df-value">${escapeHtml(m.fonction) || '—'}</div></div>
+            <div class="detail-field"><div class="df-label">Type de travailleur</div><div class="df-value">${escapeHtml(m.typeTravailleur) || '—'}</div></div>
             <div class="detail-field"><div class="df-label">Date d'adhésion</div><div class="df-value">${formatDate(m.dateAdhesion)}</div></div>
-            <div class="detail-field"><div class="df-label">Conjoint(e) déclaré(e)</div><div class="df-value">${m.conjoint || 'Aucun(e)'}</div></div>
+            <div class="detail-field"><div class="df-label">Conjoint(e) déclaré(e)</div><div class="df-value">${escapeHtml(m.conjoint) || 'Aucun(e)'}</div></div>
             <div class="detail-field"><div class="df-label">Enfants déclarés</div><div class="df-value">${m.enfants || 0} / 3 max.</div></div>
+            ${m.dernierModifiePar ? `<div class="detail-field"><div class="df-label">Dernière modification</div><div class="df-value">${escapeHtml(m.dernierModifiePar)} · ${new Date(m.dernierModifieLe).toLocaleString('fr-FR')}</div></div>` : ''}
           </div>
           <div class="ayants-droit-panel">
             <h4>👨‍👩‍👧 Ayants droit (${ayants.length})</h4>
@@ -5852,6 +6012,7 @@ function renderMembreDetailRow(m) {
 }
 
 function renderMembres() {
+  syncSelecteurTri('membres', 'mSortBy');
   const search = (document.getElementById('mSearch')?.value || '').toLowerCase().trim();
   const filtreStatut = document.getElementById('mFilterStatut')?.value || '';
 
@@ -5866,7 +6027,11 @@ function renderMembres() {
     );
   }
   if (filtreStatut) filtered = filtered.filter(m => m.statut === filtreStatut);
-  filtered.sort((a,b) => (a.prenom + ' ' + a.nom).localeCompare(b.prenom + ' ' + b.nom, 'fr', { sensitivity: 'base' }));
+  const critere = triActuel.membres;
+  const cmp = comparerTri(critere);
+  filtered.sort((a,b) => critere === 'numero' ? cmp(a.numero, b.numero)
+    : critere === 'date' ? cmp(a.dateAdhesion, b.dateAdhesion)
+    : cmp(a.prenom + ' ' + a.nom, b.prenom + ' ' + b.nom));
   membresVisiblesIds = filtered.map(m => m.id);
   majBoutonToutBascule('btnToggleAllMembres', membresDepliees, membresVisiblesIds);
 
@@ -5878,10 +6043,10 @@ function renderMembres() {
       const ouvert = membresDepliees.has(m.id);
       const ligne = `
       <tr class="row-toggle ${ouvert ? 'open' : ''}" data-search-id="${m.id}" onclick="voirDetailMembre(${m.id})">
-        <td><span class="chevron">▶</span><b>${m.numero}</b></td>
-        <td>${m.prenom} ${m.nom}</td>
-        <td>${m.telephone || '—'}</td>
-        <td>${m.fonction || '—'}</td>
+        <td><span class="chevron">▶</span><b>${escapeHtml(m.numero)}</b></td>
+        <td>${escapeHtml(m.prenom)} ${escapeHtml(m.nom)}</td>
+        <td>${escapeHtml(m.telephone) || '—'}</td>
+        <td>${escapeHtml(m.fonction) || '—'}</td>
         <td><span class="badge-statut ${badgeStatutClass(m.statut)}">${badgeStatutLabel(m.statut)}</span></td>
         <td style="white-space:nowrap" onclick="event.stopPropagation()">
           <button class="btn btn-ghost btn-small" onclick="modifierMembre(${m.id})">Modifier</button>
@@ -5915,25 +6080,25 @@ function imprimerFicheMembre(id) {
           </div>
         </div>
         <div class="rh-num">
-          N° ${m.numero}<br>
+          N° ${escapeHtml(m.numero)}<br>
           Fiche membre
         </div>
       </div>
 
       <div class="recu-title">FICHE D'ADHÉRENT</div>
-      <div class="recu-subtitle">${m.prenom} ${m.nom}</div>
+      <div class="recu-subtitle">${escapeHtml(m.prenom)} ${escapeHtml(m.nom)}</div>
       <div class="recu-type-badge in">${badgeStatutLabel(m.statut).toUpperCase()}</div>
 
       <div class="recu-body">
-        <div class="recu-row"><span class="rk">Nom & Prénom</span><span class="rv">${m.prenom} ${m.nom}</span></div>
-        <div class="recu-row"><span class="rk">Sexe</span><span class="rv">${m.sexe || '—'}</span></div>
+        <div class="recu-row"><span class="rk">Nom & Prénom</span><span class="rv">${escapeHtml(m.prenom)} ${escapeHtml(m.nom)}</span></div>
+        <div class="recu-row"><span class="rk">Sexe</span><span class="rv">${escapeHtml(m.sexe) || '—'}</span></div>
         <div class="recu-row"><span class="rk">Date de naissance</span><span class="rv">${formatDate(m.dateNaissance)}</span></div>
-        <div class="recu-row"><span class="rk">Téléphone</span><span class="rv">${m.telephone || '—'}</span></div>
-        <div class="recu-row"><span class="rk">Quartier / Ville</span><span class="rv">${m.quartier || '—'}</span></div>
-        <div class="recu-row"><span class="rk">Département / Fonction</span><span class="rv">${m.fonction || '—'}</span></div>
-        <div class="recu-row"><span class="rk">Type de travailleur</span><span class="rv">${m.typeTravailleur || '—'}</span></div>
+        <div class="recu-row"><span class="rk">Téléphone</span><span class="rv">${escapeHtml(m.telephone) || '—'}</span></div>
+        <div class="recu-row"><span class="rk">Quartier / Ville</span><span class="rv">${escapeHtml(m.quartier) || '—'}</span></div>
+        <div class="recu-row"><span class="rk">Département / Fonction</span><span class="rv">${escapeHtml(m.fonction) || '—'}</span></div>
+        <div class="recu-row"><span class="rk">Type de travailleur</span><span class="rv">${escapeHtml(m.typeTravailleur) || '—'}</span></div>
         <div class="recu-row"><span class="rk">Date d'adhésion</span><span class="rv">${formatDate(m.dateAdhesion)}</span></div>
-        <div class="recu-row"><span class="rk">Conjoint(e) déclaré(e)</span><span class="rv">${m.conjoint || 'Aucun(e)'}</span></div>
+        <div class="recu-row"><span class="rk">Conjoint(e) déclaré(e)</span><span class="rv">${escapeHtml(m.conjoint) || 'Aucun(e)'}</span></div>
         <div class="recu-row"><span class="rk">Enfants déclarés</span><span class="rv">${m.enfants || 0} / 3 maximum</span></div>
       </div>
 
@@ -6540,6 +6705,7 @@ function normRecherche(s) {
   return (s === null || s === undefined ? '' : String(s))
     .toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -6640,7 +6806,7 @@ function executerRechercheGlobale() {
   });
 
   if (resultats.length === 0) {
-    zone.innerHTML = `<div class="gs-empty">Aucun résultat pour « ${qRaw} ».</div>`;
+    zone.innerHTML = `<div class="gs-empty">Aucun résultat pour « ${escapeHtml(qRaw)} ».</div>`;
     return;
   }
 
@@ -6654,8 +6820,8 @@ function executerRechercheGlobale() {
         <div class="gs-result" onclick="allerVersResultatRecherche('${r.cat}', ${r.id})">
           <span class="gs-result-icon">${r.icon}</span>
           <div class="gs-result-text">
-            <div class="gs-result-title">${r.titre}</div>
-            <div class="gs-result-sub">${r.sous}</div>
+            <div class="gs-result-title">${escapeHtml(r.titre)}</div>
+            <div class="gs-result-sub">${escapeHtml(r.sous)}</div>
           </div>
           <span class="gs-result-arrow">→</span>
         </div>
@@ -7521,9 +7687,14 @@ function rejeterDemande(id) {
 function renderDemandes() {
   renderDemandesSelect();
   renderTauxMedical();
+  syncSelecteurTri('demandes', 'dSortBy');
   const body = document.getElementById('demandesBody');
   if (!body) return;
-  const sorted = [...demandes].sort((a,b) => b.id - a.id);
+  const critereD = triActuel.demandes;
+  const cmpD = comparerTri(critereD);
+  const sorted = [...demandes].sort((a,b) => critereD === 'nom' ? cmpD(a.membreNom, b.membreNom)
+    : critereD === 'numero' ? cmpD(a.membreNumero, b.membreNumero)
+    : cmpD(b.dateSoumission, a.dateSoumission));
   if (sorted.length === 0) {
     body.innerHTML = '<tr><td colspan="6" class="empty-state">Aucune demande enregistrée.</td></tr>';
     return;
@@ -7532,15 +7703,15 @@ function renderDemandes() {
   body.innerHTML = sorted.map(d => `
     <tr data-search-id="${d.id}">
       <td>${formatDate(d.dateSoumission)}</td>
-      <td>${d.membreNom} (${d.membreNumero})</td>
-      <td>${d.type}${d.typeSoin ? `<br><span style="font-size:10.5px;color:var(--muted)">${d.typeSoin} · ${d.tauxApplique}%</span>` : ''}</td>
+      <td>${escapeHtml(d.membreNom)} (${escapeHtml(d.membreNumero)})</td>
+      <td>${escapeHtml(d.type)}${d.typeSoin ? `<br><span style="font-size:10.5px;color:var(--muted)">${escapeHtml(d.typeSoin)} · ${d.tauxApplique}%</span>` : ''}</td>
       <td style="font-family:monospace;font-weight:600">${fmt(d.montant)}</td>
-      <td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${statutStyle[d.statut]||'var(--cream)'}">${d.statut}</span></td>
+      <td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${statutStyle[d.statut]||'var(--cream)'}">${escapeHtml(d.statut)}</span></td>
       <td style="white-space:nowrap">
         ${d.statut==='En attente' && getPermission('peutGererFinances') ? `
           <button class="btn btn-add-in btn-small" onclick="validerDemande(${d.id})">✓ Approuver</button>
           <button class="btn btn-ghost btn-small" onclick="rejeterDemande(${d.id})">✗ Rejeter</button>
-        ` : `<span style="font-size:11px;color:var(--muted)">${d.validePar||'—'}</span>`}
+        ` : `<span style="font-size:11px;color:var(--muted)">${escapeHtml(d.validePar) || '—'}</span>`}
       </td>
     </tr>
   `).join('');
@@ -7596,13 +7767,13 @@ function imprimerPV(id) {
         <div class="rh-num">${formatDate(r.date)}</div>
       </div>
       <div class="recu-title">PROCÈS-VERBAL DE RÉUNION</div>
-      <div class="recu-subtitle">${r.titre}</div>
+      <div class="recu-subtitle">${escapeHtml(r.titre)}</div>
       <div class="recu-body">
-        <div class="recu-row"><span class="rk">Type</span><span class="rv">${r.type}</span></div>
+        <div class="recu-row"><span class="rk">Type</span><span class="rv">${escapeHtml(r.type)}</span></div>
         <div class="recu-row"><span class="rk">Date</span><span class="rv">${formatDate(r.date)}</span></div>
-        <div class="recu-row"><span class="rk">Lieu</span><span class="rv">${r.lieu||'—'}</span></div>
-        <div class="recu-row"><span class="rk">Ordre du jour</span><span class="rv">${r.odj||'—'}</span></div>
-        <div class="recu-row" style="flex-direction:column;gap:6px"><span class="rk">Décisions / PV</span><span class="rv" style="white-space:pre-wrap">${r.pv||'—'}</span></div>
+        <div class="recu-row"><span class="rk">Lieu</span><span class="rv">${escapeHtml(r.lieu) || '—'}</span></div>
+        <div class="recu-row"><span class="rk">Ordre du jour</span><span class="rv">${escapeHtml(r.odj) || '—'}</span></div>
+        <div class="recu-row" style="flex-direction:column;gap:6px"><span class="rk">Décisions / PV</span><span class="rv" style="white-space:pre-wrap">${escapeHtml(r.pv) || '—'}</span></div>
       </div>
       <div class="recu-signatures">
         <div class="recu-sig"><div class="rs-label">${blocSignatureCA('president')}</div><div class="rs-line">Signature</div></div>
@@ -7615,6 +7786,7 @@ function imprimerPV(id) {
 }
 
 function renderReunions() {
+  syncSelecteurTri('reunions', 'rSortBy');
   const body = document.getElementById('reunionsBody');
   if (!body) return;
   if (reunions.length === 0) {
@@ -7623,7 +7795,9 @@ function renderReunions() {
     majBoutonToutBascule('btnToggleAllReunions', reunionsDepliees, reunionsVisiblesIds);
     return;
   }
-  const sorted = [...reunions].sort((a,b) => b.date.localeCompare(a.date));
+  const critereR = triActuel.reunions;
+  const cmpR = comparerTri(critereR);
+  const sorted = [...reunions].sort((a,b) => critereR === 'nom' ? cmpR(a.titre, b.titre) : cmpR(b.date, a.date));
   reunionsVisiblesIds = sorted.map(r => r.id);
   majBoutonToutBascule('btnToggleAllReunions', reunionsDepliees, reunionsVisiblesIds);
   body.innerHTML = sorted.map(r => {
@@ -7631,9 +7805,9 @@ function renderReunions() {
     const ligne = `
     <tr class="row-toggle ${ouvert ? 'open' : ''}" data-search-id="${r.id}" onclick="toggleReunionDetail(${r.id})">
       <td><span class="chevron">▶</span>${formatDate(r.date)}</td>
-      <td><b>${r.titre}</b></td>
-      <td>${r.type}</td>
-      <td>${r.lieu||'—'}</td>
+      <td><b>${escapeHtml(r.titre)}</b></td>
+      <td>${escapeHtml(r.type)}</td>
+      <td>${escapeHtml(r.lieu) || '—'}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn btn-gold btn-small" onclick="imprimerPV(${r.id})">🖨️ PV</button>
         <button class="btn btn-ghost btn-small" onclick="supprimerReunion(${r.id})">Supprimer</button>
@@ -7643,8 +7817,8 @@ function renderReunions() {
     <tr class="detail-row">
       <td colspan="5">
         <div class="detail-grid">
-          <div class="detail-field" style="grid-column:1/-1"><div class="df-label">Ordre du jour</div><div class="df-value" style="font-weight:400;white-space:pre-wrap">${r.odj || '—'}</div></div>
-          <div class="detail-field" style="grid-column:1/-1"><div class="df-label">Décisions / Procès-verbal</div><div class="df-value" style="font-weight:400;white-space:pre-wrap">${r.pv || '—'}</div></div>
+          <div class="detail-field" style="grid-column:1/-1"><div class="df-label">Ordre du jour</div><div class="df-value" style="font-weight:400;white-space:pre-wrap">${escapeHtml(r.odj) || '—'}</div></div>
+          <div class="detail-field" style="grid-column:1/-1"><div class="df-label">Décisions / Procès-verbal</div><div class="df-value" style="font-weight:400;white-space:pre-wrap">${escapeHtml(r.pv) || '—'}</div></div>
         </div>
       </td>
     </tr>` : '';
