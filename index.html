@@ -10,7 +10,7 @@
   // À incrémenter à chaque mise à jour importante pour forcer un rechargement propre
   // sur tous les appareils, même si le Service Worker n'a pas encore détecté le changement.
   (function() {
-    var VERSION_APP = 'v2026-07-06b';
+    var VERSION_APP = 'v2026-07-06c';
     try {
       var versionVue = localStorage.getItem('mtd_app_version');
       if (versionVue === VERSION_APP) return; // déjà à jour, rien à faire
@@ -319,6 +319,28 @@
     color: var(--muted);
     margin-bottom: 22px;
   }
+  /* ── LISTES REPLIABLES ── */
+  .liste-toggle-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    user-select: none;
+  }
+  .liste-toggle-header .lth-chevron {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 13px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .liste-toggle-header.ouvert .lth-chevron { transform: rotate(180deg); }
+  .liste-corps-repliable {
+    display: none;
+    margin-top: 14px;
+  }
+  .liste-corps-repliable.ouvert { display: block; }
 
   /* ── CALCULATEUR COTISATIONS ── */
   .calc-grid {
@@ -1850,35 +1872,39 @@
     </div>
 
     <div class="card">
-      <div class="card-title">Liste des membres adhérents</div>
-      <div class="card-subtitle">Recherchez et gérez tous les membres de la MTD</div>
-
-      <div class="filter-row">
-        <div class="field-group">
-          <label class="field-label">🔍 Rechercher (nom, n°, téléphone, fonction...)</label>
-          <input type="text" class="field-input" id="mSearch" placeholder="Tapez pour rechercher..." oninput="renderMembres()">
-        </div>
-        <div class="field-group" style="max-width:200px">
-          <label class="field-label">Filtrer par statut</label>
-          <select class="field-input" id="mFilterStatut" onchange="renderMembres()">
-            <option value="">Tous les statuts</option>
-            <option value="A jour">À jour</option>
-            <option value="Retard">En retard</option>
-            <option value="Suspendu">Suspendu</option>
-          </select>
-        </div>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>Liste des membres adhérents</span><span class="lth-chevron">▾</span>
       </div>
+      <div class="card-subtitle">Cliquez sur le titre pour afficher la liste</div>
 
-      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-        <button class="btn btn-ghost btn-small" id="btnToggleAllMembres" onclick="toggleTousMembres()">🔽 Tout déplier</button>
+      <div class="liste-corps-repliable">
+        <div class="filter-row">
+          <div class="field-group">
+            <label class="field-label">🔍 Rechercher (nom, n°, téléphone, fonction...)</label>
+            <input type="text" class="field-input" id="mSearch" placeholder="Tapez pour rechercher..." oninput="renderMembres()">
+          </div>
+          <div class="field-group" style="max-width:200px">
+            <label class="field-label">Filtrer par statut</label>
+            <select class="field-input" id="mFilterStatut" onchange="renderMembres()">
+              <option value="">Tous les statuts</option>
+              <option value="A jour">À jour</option>
+              <option value="Retard">En retard</option>
+              <option value="Suspendu">Suspendu</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+          <button class="btn btn-ghost btn-small" id="btnToggleAllMembres" onclick="toggleTousMembres()">🔽 Tout déplier</button>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>N°</th><th>Nom & Prénom</th><th>Téléphone</th><th>Fonction</th><th>Statut</th><th></th></tr></thead>
+          <tbody id="membresBody">
+            <tr><td colspan="6" class="empty-state">Aucun membre enregistré. Ajoutez votre premier membre ci-dessus.</td></tr>
+          </tbody>
+        </table>
       </div>
-
-      <table class="data-table">
-        <thead><tr><th>N°</th><th>Nom & Prénom</th><th>Téléphone</th><th>Fonction</th><th>Statut</th><th></th></tr></thead>
-        <tbody id="membresBody">
-          <tr><td colspan="6" class="empty-state">Aucun membre enregistré. Ajoutez votre premier membre ci-dessus.</td></tr>
-        </tbody>
-      </table>
     </div>
 
     <div id="membreDetailZone" style="display:none"></div>
@@ -2077,16 +2103,22 @@
         <button class="btn btn-add-in" id="btnAddEntree" onclick="ajouterEntree()">+ Ajouter</button>
       </div>
 
-      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-        <button class="btn btn-ghost btn-small" id="btnToggleAllEntrees" onclick="toggleTousEntrees()">🔽 Tout déplier</button>
+      <div class="card-title liste-toggle-header" style="margin-top:24px" onclick="toggleListeRepliable(this)">
+        <span>📋 Liste des entrées</span><span class="lth-chevron">▾</span>
       </div>
+      <div class="card-subtitle">Cliquez sur le titre pour afficher la liste</div>
+      <div class="liste-corps-repliable">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+          <button class="btn btn-ghost btn-small" id="btnToggleAllEntrees" onclick="toggleTousEntrees()">🔽 Tout déplier</button>
+        </div>
 
-      <table class="data-table">
-        <thead><tr><th>N°</th><th>Date</th><th>Membre</th><th>Dépt. / Fonction</th><th>Type</th><th style="text-align:right">Montant</th><th></th></tr></thead>
-        <tbody id="entreesBody">
-          <tr><td colspan="7" class="empty-state">Aucune entrée enregistrée. Ajoutez votre première cotisation ci-dessus.</td></tr>
-        </tbody>
-      </table>
+        <table class="data-table">
+          <thead><tr><th>N°</th><th>Date</th><th>Membre</th><th>Dépt. / Fonction</th><th>Type</th><th style="text-align:right">Montant</th><th></th></tr></thead>
+          <tbody id="entreesBody">
+            <tr><td colspan="7" class="empty-state">Aucune entrée enregistrée. Ajoutez votre première cotisation ci-dessus.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="card">
@@ -2173,20 +2205,26 @@
         <button class="btn btn-add-out" id="btnAddSortie" onclick="ajouterSortie()">+ Ajouter</button>
       </div>
 
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
-        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer">
-          <input type="checkbox" id="chkGroupeSorties" checked onchange="onToggleGroupeSorties()">
-          Regrouper les prestations d'un même membre par mois
-        </label>
-        <button class="btn btn-ghost btn-small" id="btnToggleAllSorties" onclick="toggleTousSorties()">🔽 Tout déplier</button>
+      <div class="card-title liste-toggle-header" style="margin-top:24px" onclick="toggleListeRepliable(this)">
+        <span>📋 Liste des sorties / prestations</span><span class="lth-chevron">▾</span>
       </div>
+      <div class="card-subtitle">Cliquez sur le titre pour afficher la liste</div>
+      <div class="liste-corps-repliable">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer">
+            <input type="checkbox" id="chkGroupeSorties" checked onchange="onToggleGroupeSorties()">
+            Regrouper les prestations d'un même membre par mois
+          </label>
+          <button class="btn btn-ghost btn-small" id="btnToggleAllSorties" onclick="toggleTousSorties()">🔽 Tout déplier</button>
+        </div>
 
-      <table class="data-table">
-        <thead><tr><th>N°</th><th>Date</th><th>Bénéficiaire</th><th>Objet / Précision</th><th>Catégorie</th><th style="text-align:right">Montant</th><th></th></tr></thead>
-        <tbody id="sortiesBody">
-          <tr><td colspan="7" class="empty-state">Aucune sortie enregistrée. Ajoutez votre première prestation ci-dessus.</td></tr>
-        </tbody>
-      </table>
+        <table class="data-table">
+          <thead><tr><th>N°</th><th>Date</th><th>Bénéficiaire</th><th>Objet / Précision</th><th>Catégorie</th><th style="text-align:right">Montant</th><th></th></tr></thead>
+          <tbody id="sortiesBody">
+            <tr><td colspan="7" class="empty-state">Aucune sortie enregistrée. Ajoutez votre première prestation ci-dessus.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="card">
@@ -2278,24 +2316,28 @@
     </div>
 
     <div class="card">
-      <div class="card-title">Rapports archivés</div>
-      <div class="card-subtitle">Retrouvez tous les rapports financiers mensuels sauvegardés</div>
-
-      <div class="field-group">
-        <label class="field-label">🔍 Rechercher un rapport</label>
-        <input type="text" class="field-input" id="archiveSearch" placeholder="Rechercher par mois, note..." oninput="renderArchives()">
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>Rapports archivés</span><span class="lth-chevron">▾</span>
       </div>
+      <div class="card-subtitle">Cliquez sur le titre pour afficher la liste</div>
 
-      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-        <button class="btn btn-ghost btn-small" id="btnToggleAllArchives" onclick="toggleTousArchives()">🔽 Tout déplier</button>
+      <div class="liste-corps-repliable">
+        <div class="field-group">
+          <label class="field-label">🔍 Rechercher un rapport</label>
+          <input type="text" class="field-input" id="archiveSearch" placeholder="Rechercher par mois, note..." oninput="renderArchives()">
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+          <button class="btn btn-ghost btn-small" id="btnToggleAllArchives" onclick="toggleTousArchives()">🔽 Tout déplier</button>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Mois</th><th>Date d'archivage</th><th style="text-align:right">Entrées</th><th style="text-align:right">Sorties</th><th style="text-align:right">Solde</th><th></th></tr></thead>
+          <tbody id="archivesBody">
+            <tr><td colspan="6" class="empty-state">Aucun rapport archivé pour le moment.</td></tr>
+          </tbody>
+        </table>
       </div>
-
-      <table class="data-table">
-        <thead><tr><th>Mois</th><th>Date d'archivage</th><th style="text-align:right">Entrées</th><th style="text-align:right">Sorties</th><th style="text-align:right">Solde</th><th></th></tr></thead>
-        <tbody id="archivesBody">
-          <tr><td colspan="6" class="empty-state">Aucun rapport archivé pour le moment.</td></tr>
-        </tbody>
-      </table>
     </div>
 
     <div class="card" style="border-color:#E3C9C9">
@@ -2317,16 +2359,18 @@
   <!-- PANEL JOURNAL -->
   <div class="panel" id="panel-journal">
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-        <div>
-          <div class="card-title">Journal d'activité — Conseil d'Administration</div>
-          <div class="card-subtitle">Toutes les actions effectuées par les membres du CA sont enregistrées ici en temps réel</div>
-        </div>
-        <button class="btn btn-ghost btn-small" onclick="viderJournal()">🗑️ Vider le journal</button>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>Journal d'activité — Conseil d'Administration</span><span class="lth-chevron">▾</span>
       </div>
-      <div class="info-banner">💡 Ce journal est visible par tous les rôles et garantit une transparence totale des opérations. Chaque ligne peut être supprimée individuellement pour libérer de l'espace.</div>
-      <div class="journal-list" id="journalList">
-        <div class="empty-state">Aucune activité enregistrée pour le moment.</div>
+      <div class="card-subtitle">Cliquez pour afficher/masquer le journal</div>
+      <div class="liste-corps-repliable">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="btn btn-ghost btn-small" onclick="viderJournal()">🗑️ Vider le journal</button>
+        </div>
+        <div class="info-banner">💡 Ce journal est visible par tous les rôles et garantit une transparence totale des opérations. Chaque ligne peut être supprimée individuellement pour libérer de l'espace.</div>
+        <div class="journal-list" id="journalList">
+          <div class="empty-state">Aucune activité enregistrée pour le moment.</div>
+        </div>
       </div>
     </div>
     <div class="card">
@@ -2365,13 +2409,20 @@
         </div>
       </div>
       <div id="cotisStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-bottom:20px"></div>
-      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-        <button class="btn btn-ghost btn-small" id="btnToggleAllCotisations" onclick="toggleTousCotisations()">🔽 Tout déplier</button>
+
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>📋 Détail par membre</span><span class="lth-chevron">▾</span>
       </div>
-      <table class="data-table">
-        <thead><tr><th>N°</th><th>Membre</th><th>Fonction</th><th>Statut</th><th>Dernier paiement</th><th>Total versé</th><th>Action</th></tr></thead>
-        <tbody id="cotisBody"><tr><td colspan="7" class="empty-state">Aucun membre enregistré.</td></tr></tbody>
-      </table>
+      <div class="card-subtitle">Cliquez sur le titre pour afficher la liste</div>
+      <div class="liste-corps-repliable">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+          <button class="btn btn-ghost btn-small" id="btnToggleAllCotisations" onclick="toggleTousCotisations()">🔽 Tout déplier</button>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>N°</th><th>Membre</th><th>Fonction</th><th>Statut</th><th>Dernier paiement</th><th>Total versé</th><th>Action</th></tr></thead>
+          <tbody id="cotisBody"><tr><td colspan="7" class="empty-state">Aucun membre enregistré.</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="card">
@@ -2491,12 +2542,16 @@
     </div>
 
     <div class="card">
-      <div class="card-title">Demandes en attente de validation</div>
-      <div class="card-subtitle">Le Président ou Trésorier peut approuver ou rejeter chaque demande</div>
-      <table class="data-table">
-        <thead><tr><th>Date</th><th>Membre</th><th>Type</th><th>Montant</th><th>Statut</th><th>Action</th></tr></thead>
-        <tbody id="demandesBody"><tr><td colspan="6" class="empty-state">Aucune demande en attente.</td></tr></tbody>
-      </table>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>Demandes en attente de validation</span><span class="lth-chevron">▾</span>
+      </div>
+      <div class="card-subtitle">Cliquez sur le titre pour afficher la liste — le Président ou Trésorier peut approuver ou rejeter chaque demande</div>
+      <div class="liste-corps-repliable">
+        <table class="data-table">
+          <thead><tr><th>Date</th><th>Membre</th><th>Type</th><th>Montant</th><th>Statut</th><th>Action</th></tr></thead>
+          <tbody id="demandesBody"><tr><td colspan="6" class="empty-state">Aucune demande en attente.</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -2540,14 +2595,19 @@
     </div>
 
     <div class="card">
-      <div class="card-title">Historique des réunions</div>
-      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-        <button class="btn btn-ghost btn-small" id="btnToggleAllReunions" onclick="toggleTousReunions()">🔽 Tout déplier</button>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>Historique des réunions</span><span class="lth-chevron">▾</span>
       </div>
-      <table class="data-table">
-        <thead><tr><th>Date</th><th>Titre</th><th>Type</th><th>Lieu</th><th></th></tr></thead>
-        <tbody id="reunionsBody"><tr><td colspan="5" class="empty-state">Aucune réunion enregistrée.</td></tr></tbody>
-      </table>
+      <div class="card-subtitle">Cliquez sur le titre pour afficher la liste</div>
+      <div class="liste-corps-repliable">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+          <button class="btn btn-ghost btn-small" id="btnToggleAllReunions" onclick="toggleTousReunions()">🔽 Tout déplier</button>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Date</th><th>Titre</th><th>Type</th><th>Lieu</th><th></th></tr></thead>
+          <tbody id="reunionsBody"><tr><td colspan="5" class="empty-state">Aucune réunion enregistrée.</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -2792,16 +2852,20 @@
   <!-- ══ PANEL CORBEILLE ══ -->
   <div class="panel" id="panel-corbeille">
     <div class="card">
-      <div class="card-title">🗑️ Corbeille</div>
-      <div class="card-subtitle">Les éléments supprimés (entrées, sorties, membres, archives, réunions) sont conservés ici et peuvent être restaurés</div>
-      <div class="info-banner">💡 Un élément supprimé définitivement depuis la corbeille ne pourra plus être récupéré. Pensez à vérifier avant de vider la corbeille.</div>
-      <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
-        <button class="btn btn-ghost" onclick="viderCorbeille()">🗑️ Vider la corbeille</button>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>🗑️ Corbeille</span><span class="lth-chevron">▾</span>
       </div>
-      <table class="data-table">
-        <thead><tr><th>Type</th><th>Élément</th><th>Supprimé le</th><th>Par</th><th>Action</th></tr></thead>
-        <tbody id="corbeilleBody"><tr><td colspan="5" class="empty-state">La corbeille est vide.</td></tr></tbody>
-      </table>
+      <div class="card-subtitle">Cliquez sur le titre pour afficher la liste — les éléments supprimés (entrées, sorties, membres, archives, réunions) sont conservés ici et peuvent être restaurés</div>
+      <div class="liste-corps-repliable">
+        <div class="info-banner">💡 Un élément supprimé définitivement depuis la corbeille ne pourra plus être récupéré. Pensez à vérifier avant de vider la corbeille.</div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+          <button class="btn btn-ghost" onclick="viderCorbeille()">🗑️ Vider la corbeille</button>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Type</th><th>Élément</th><th>Supprimé le</th><th>Par</th><th>Action</th></tr></thead>
+          <tbody id="corbeilleBody"><tr><td colspan="5" class="empty-state">La corbeille est vide.</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -3722,6 +3786,16 @@ function basculerTout(depliSet, visibleIds, renderFn) {
   depliSet.clear();
   if (!tousOuverts) visibleIds.forEach(id => depliSet.add(id));
   renderFn();
+}
+
+// Bascule l'affichage d'une liste repliable (en-tête + le bloc qui le suit immédiatement).
+// Fermée par défaut pour gagner de la place ; un clic sur le titre l'ouvre ou la referme.
+function toggleListeRepliable(headerEl) {
+  headerEl.classList.toggle('ouvert');
+  const corps = headerEl.nextElementSibling && headerEl.nextElementSibling.classList.contains('card-subtitle')
+    ? headerEl.nextElementSibling.nextElementSibling
+    : headerEl.nextElementSibling;
+  if (corps) corps.classList.toggle('ouvert');
 }
 
 function toggleTousMembres()     { basculerTout(membresDepliees, membresVisiblesIds, renderMembres); }
