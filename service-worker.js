@@ -8,7 +8,7 @@
 // version existe et de proposer la mise à jour aux utilisateurs.
 // ══════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'mtd-gestion-v17';
+const CACHE_NAME = 'mtd-gestion-v18';
 
 // Liste des fichiers essentiels à mettre en cache pour le fonctionnement hors-ligne.
 // Adaptez les noms si vos fichiers portent des noms différents.

@@ -829,8 +829,8 @@
     text-align: center;
   }
   .recu-sig .rs-label { font-size: 11px; font-weight: 700; color: #0D1B2A; margin-bottom: 26px; line-height: 1.5; }
-  .recu-sig .rs-signature-img { display: block; max-height: 38px; max-width: 120px; margin: 0 auto 4px; object-fit: contain; }
-  .recu-sig .rs-label:has(.rs-signature-img) { margin-bottom: 6px; }
+  .recu-sig .rs-signature-img { display: block; max-height: 40px; max-width: 130px; margin: 4px auto 0; object-fit: contain; }
+  .recu-sig .rs-label:has(.rs-signature-img) { margin-bottom: 4px; }
   .recu-sig .rs-nom { display: block; font-size: 11.5px; font-weight: 700; color: #8A6D1D; margin-top: 2px; }
   .recu-sig .rs-line { border-top: 1px solid #999; padding-top: 6px; font-size: 10px; color: #7A6F5C; }
   .recu-cachet {
@@ -3521,18 +3521,39 @@ function importerSignatureImage(role, inputEl) {
   lecteur.onload = (e) => {
     const img = new Image();
     img.onload = () => {
-      const largeurMax = 300;
+      const largeurMax = 400;
       const ratio = Math.min(1, largeurMax / img.width);
       const canvas = document.createElement('canvas');
       canvas.width = Math.round(img.width * ratio);
       canvas.height = Math.round(img.height * ratio);
       const ctx = canvas.getContext('2d');
-      // Fond blanc : une photo de signature sur papier a souvent un fond
-      // légèrement transparent/gris scanné ; ceci évite un rendu bizarre à l'impression.
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+      // Détourage automatique : isole le trait d'encre du fond de la feuille.
+      // On calcule la luminosité moyenne de la photo pour fixer un seuil adapté
+      // (s'ajuste à la luminosité de la prise de vue), puis chaque pixel plus
+      // sombre que ce seuil devient de l'encre bleu marine opaque (couleur de la
+      // charte MTD), et chaque pixel plus clair (le papier) devient transparent.
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const donnees = imageData.data;
+      let sommeLuminance = 0;
+      for (let i = 0; i < donnees.length; i += 4) {
+        sommeLuminance += 0.299 * donnees[i] + 0.587 * donnees[i + 1] + 0.114 * donnees[i + 2];
+      }
+      const luminanceMoyenne = sommeLuminance / (donnees.length / 4);
+      const seuil = luminanceMoyenne * 0.78;
+
+      for (let i = 0; i < donnees.length; i += 4) {
+        const luminance = 0.299 * donnees[i] + 0.587 * donnees[i + 1] + 0.114 * donnees[i + 2];
+        if (luminance < seuil) {
+          donnees[i] = 13; donnees[i + 1] = 27; donnees[i + 2] = 42; // bleu marine MTD
+          donnees[i + 3] = 255;
+        } else {
+          donnees[i + 3] = 0; // transparent
+        }
+      }
+      ctx.putImageData(imageData, 0, 0);
+      const dataUrl = canvas.toDataURL('image/png');
 
       const images = getParametresSignatureImages();
       images[role] = dataUrl;
@@ -3589,7 +3610,7 @@ function blocSignatureImageHTML(role) {
 function blocSignatureCA(role) {
   const s = getParametresSignataires();
   const labels = { president: 'Le Président du C.A.', tresorier: 'Le Trésorier Général', secretaire: 'Le Secrétaire Général', controleur: 'Le Comité de Contrôle' };
-  return blocSignatureImageHTML(role) + blocSignaturePersonne(labels[role] || '', s[role]);
+  return blocSignaturePersonne(labels[role] || '', s[role]) + blocSignatureImageHTML(role);
 }
 function blocSignaturePersonne(label, nom) {
   return `${label}${nom ? `<span class="rs-nom">${nom}</span>` : ''}`;
