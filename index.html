@@ -829,6 +829,8 @@
     text-align: center;
   }
   .recu-sig .rs-label { font-size: 11px; font-weight: 700; color: #0D1B2A; margin-bottom: 26px; line-height: 1.5; }
+  .recu-sig .rs-signature-img { display: block; max-height: 38px; max-width: 120px; margin: 0 auto 4px; object-fit: contain; }
+  .recu-sig .rs-label:has(.rs-signature-img) { margin-bottom: 6px; }
   .recu-sig .rs-nom { display: block; font-size: 11.5px; font-weight: 700; color: #8A6D1D; margin-top: 2px; }
   .recu-sig .rs-line { border-top: 1px solid #999; padding-top: 6px; font-size: 10px; color: #7A6F5C; }
   .recu-cachet {
@@ -1377,6 +1379,7 @@
 <!-- QR CODE : génération (reçus/fiches) et scan (caméra) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <!-- ÉCRAN DE CONNEXION -->
 <div id="loginScreen">
@@ -2843,6 +2846,23 @@
     </div>
 
     <div class="card">
+      <div class="card-title">🖋️ Signatures manuscrites (photo)</div>
+      <div class="card-subtitle">Signez sur une feuille blanche, prenez-la en photo (ou scannez-la), puis importez-la ici. Elle s'insérera automatiquement sur tous les reçus et documents imprimés à la place de l'espace vierge — réservé au Président. Remplacez-la à tout moment si le titulaire change.</div>
+      <div class="membre-form" style="grid-template-columns:repeat(4,1fr)">
+        ${['president','tresorier','secretaire','controleur'].map(role => {
+          const labels = { president: '👑 Président du C.A.', tresorier: '💰 Trésorier Général', secretaire: '📝 Secrétaire Général', controleur: '🔍 Comité de Contrôle' };
+          return `
+        <div class="field-group" style="margin-bottom:0">
+          <label class="field-label">${labels[role]}</label>
+          <div id="apercuSignature_${role}" style="min-height:50px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px dashed var(--border);border-radius:8px;margin-bottom:6px;padding:4px"></div>
+          <input type="file" accept="image/*" capture="environment" class="field-input" style="padding:8px;font-size:12px" onchange="importerSignatureImage('${role}', this)">
+          <button class="btn btn-ghost btn-small" style="margin-top:5px;width:100%" onclick="supprimerSignatureImage('${role}')">🗑️ Retirer</button>
+        </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="card">
       <div class="card-title">🚨 Seuils d'alerte intelligents</div>
       <div class="card-subtitle">Le logiciel vous prévient automatiquement — retards de cotisation, caisse faible, dépassement de plafond, réunion proche, reçu non imprimé</div>
 
@@ -3463,11 +3483,95 @@ function appliquerSignatairesPartout() {
   const p4 = document.getElementById('paramSignControleur'); if (p4) p4.value = s.controleur;
 }
 
-// Construit le libellé de signature (rôle + nom du titulaire, si renseigné)
+// ══════════════════════════════════════════════════════════════════════════
+// SIGNATURES MANUSCRITES (photo) — enregistrées une fois, insérées partout
+// ══════════════════════════════════════════════════════════════════════════
+function getParametresSignatureImages() {
+  return JSON.parse(localStorage.getItem('mtd_params_signature_images') || 'null') || {};
+}
+
+// Importe une photo de signature : redimensionne et compresse côté client
+// (max 300px de large, JPEG qualité 0.75) avant de l'enregistrer, pour que la
+// photo prise directement au téléphone (souvent plusieurs Mo) reste légère à
+// stocker et à synchroniser via Firebase.
+function importerSignatureImage(role, inputEl) {
+  if (!getPermission('peutGererMdp')) { alert('Votre rôle ne permet pas de modifier les signatures (réservé au Président).'); inputEl.value = ''; return; }
+  const fichier = inputEl.files && inputEl.files[0];
+  if (!fichier) return;
+
+  const lecteur = new FileReader();
+  lecteur.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const largeurMax = 300;
+      const ratio = Math.min(1, largeurMax / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      const ctx = canvas.getContext('2d');
+      // Fond blanc : une photo de signature sur papier a souvent un fond
+      // légèrement transparent/gris scanné ; ceci évite un rendu bizarre à l'impression.
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+      const images = getParametresSignatureImages();
+      images[role] = dataUrl;
+      localStorage.setItem('mtd_params_signature_images', JSON.stringify(images));
+      if (firebaseOK && db) db.ref('mtd_dorado/parametres/signatureImages').set(images).catch(() => setSyncStatus(false));
+      journaliser('Paramètres', `Signature manuscrite mise à jour pour le rôle : ${role}`);
+      appliquerSignatureImagesPartout();
+      inputEl.value = '';
+    };
+    img.onerror = () => alert("Impossible de lire cette image. Réessayez avec une autre photo.");
+    img.src = e.target.result;
+  };
+  lecteur.onerror = () => alert("Impossible de lire ce fichier. Réessayez.");
+  lecteur.readAsDataURL(fichier);
+}
+
+function supprimerSignatureImage(role) {
+  if (!getPermission('peutGererMdp')) { alert('Votre rôle ne permet pas de modifier les signatures (réservé au Président).'); return; }
+  const images = getParametresSignatureImages();
+  if (!images[role]) return;
+  if (!confirm('Retirer cette signature manuscrite ? Les documents afficheront à nouveau un espace vierge pour signer à la main.')) return;
+  delete images[role];
+  localStorage.setItem('mtd_params_signature_images', JSON.stringify(images));
+  if (firebaseOK && db) db.ref('mtd_dorado/parametres/signatureImages').set(images).catch(() => setSyncStatus(false));
+  journaliser('Paramètres', `Signature manuscrite retirée pour le rôle : ${role}`);
+  appliquerSignatureImagesPartout();
+}
+
+// Affiche les aperçus dans Paramètres (appelé au chargement et après chaque
+// modification, y compris quand un autre appareil synchronise une nouvelle signature)
+function appliquerSignatureImagesPartout() {
+  const images = getParametresSignatureImages();
+  ['president','tresorier','secretaire','controleur'].forEach(role => {
+    const zone = document.getElementById('apercuSignature_' + role);
+    if (!zone) return;
+    zone.innerHTML = images[role]
+      ? `<img src="${images[role]}" style="max-height:42px;max-width:100%;object-fit:contain">`
+      : `<span style="font-size:11px;color:var(--muted)">Aucune signature importée</span>`;
+  });
+}
+
+// Retourne le HTML de l'image de signature pour un rôle donné (vide si aucune
+// signature n'a été importée) — utilisé par blocSignatureCA() sur tous les documents.
+function blocSignatureImageHTML(role) {
+  const images = getParametresSignatureImages();
+  return images[role] ? `<img src="${images[role]}" class="rs-signature-img" alt="Signature">` : '';
+}
+
+// Construit le libellé de signature (rôle + nom du titulaire, si renseigné),
+// précédé de la photo de signature manuscrite si elle a été importée dans
+// Paramètres. Comme cette fonction est utilisée par tous les documents imprimés
+// (reçus, fiches, PV, rapports...), la signature s'applique automatiquement
+// partout dès qu'elle est enregistrée une seule fois.
 function blocSignatureCA(role) {
   const s = getParametresSignataires();
   const labels = { president: 'Le Président du C.A.', tresorier: 'Le Trésorier Général', secretaire: 'Le Secrétaire Général', controleur: 'Le Comité de Contrôle' };
-  return blocSignaturePersonne(labels[role] || '', s[role]);
+  return blocSignatureImageHTML(role) + blocSignaturePersonne(labels[role] || '', s[role]);
 }
 function blocSignaturePersonne(label, nom) {
   return `${label}${nom ? `<span class="rs-nom">${nom}</span>` : ''}`;
@@ -3693,6 +3797,14 @@ function initialiserFirebase() {
       const apres = JSON.stringify(data.parametres.rolesPermissions);
       localStorage.setItem('mtd_roles_permissions', apres);
       if (avant !== apres) appliquerPermissions();
+    }
+    if (data.parametres && data.parametres.signataires) {
+      localStorage.setItem('mtd_params_signataires', JSON.stringify(data.parametres.signataires));
+      if (typeof appliquerSignatairesPartout === 'function') appliquerSignatairesPartout();
+    }
+    if (data.parametres && data.parametres.signatureImages) {
+      localStorage.setItem('mtd_params_signature_images', JSON.stringify(data.parametres.signatureImages));
+      if (typeof appliquerSignatureImagesPartout === 'function') appliquerSignatureImagesPartout();
     }
     if (data.parametres && data.parametres.masques) {
       const mq = data.parametres.masques;
@@ -4431,7 +4543,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'membres') renderMembres();
     if (tab.dataset.tab === 'corbeille') renderCorbeille();
     if (tab.dataset.tab === 'parametres') {
-      appliquerContactPartout(); appliquerSignatairesPartout(); renderParamCompte(); chargerDriveClientId();
+      appliquerContactPartout(); appliquerSignatairesPartout(); appliquerSignatureImagesPartout(); renderParamCompte(); chargerDriveClientId();
       const cb = document.getElementById('paramToastsActifs'); if (cb) cb.checked = toastsActifs();
       const ns = document.getElementById('notifPermStatus');
       if (ns && 'Notification' in window) {
@@ -4736,6 +4848,7 @@ function renderEntrees() {
       <td class="amount-cell in">+${fmt(e.montant)}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn btn-gold btn-small" onclick="imprimerRecu('in', ${e.id})">🧾 Reçu</button>
+        <button class="btn btn-ghost btn-small" style="color:#25D366" onclick="event.stopPropagation();partagerRecuWhatsApp('in', ${e.id})">📤</button>
         <button class="btn btn-ghost btn-small" title="Retire la ligne de la liste, sans affecter le total" onclick="masquerEntree(${e.id})">Masquer</button>
       </td>
     </tr>`;
@@ -4796,6 +4909,7 @@ function rendreLigneSortieUnique(s) {
       <td class="amount-cell out">-${fmt(s.montant)}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn btn-gold btn-small" onclick="imprimerRecu('out', ${s.id})">🧾 Reçu</button>
+        <button class="btn btn-ghost btn-small" style="color:#25D366" onclick="event.stopPropagation();partagerRecuWhatsApp('out', ${s.id})">📤</button>
         <button class="btn btn-ghost btn-small" title="Retire la ligne de la liste, sans affecter le total" onclick="masquerSortie(${s.id})">Masquer</button>
       </td>
     </tr>`;
@@ -4854,6 +4968,7 @@ function rendreLigneGroupeSortie(key, g) {
               <td class="amount-cell out" style="text-align:right">-${fmt(s.montant)}</td>
               <td style="white-space:nowrap">
                 <button class="btn btn-gold btn-small" onclick="imprimerRecu('out', ${s.id})">🧾 Reçu</button>
+                <button class="btn btn-ghost btn-small" style="color:#25D366" onclick="partagerRecuWhatsApp('out', ${s.id})">📤</button>
                 <button class="btn btn-ghost btn-small" onclick="masquerSortie(${s.id})">Masquer</button>
               </td>
             </tr>`).join('')}
@@ -5285,11 +5400,12 @@ function renderRecus() {
     eBody.innerHTML = sorted.map(e => `
       <tr>
         <td>${formatDate(e.date)}</td>
-        <td>${e.desc}${e.fonction ? ' — ' + e.fonction : ''}</td>
+        <td>${escapeHtml(e.desc)}${e.fonction ? ' — ' + escapeHtml(e.fonction) : ''}</td>
         <td><span class="badge ${inBadge[e.type]}">${e.typeLabel || e.type}</span></td>
         <td class="amount-cell in">+${fmt(e.montant)}</td>
         <td style="white-space:nowrap">
           <button class="btn btn-gold btn-small" onclick="imprimerRecu('in', ${e.id})">🧾 Imprimer</button>
+          <button class="btn btn-ghost btn-small" style="color:#25D366" onclick="partagerRecuWhatsApp('in', ${e.id})">📤</button>
           <button class="btn btn-ghost btn-small" title="Retirer de la liste (sans toucher au solde)" onclick="masquerRecu('in', ${e.id})">✕</button>
         </td>
       </tr>
@@ -5305,11 +5421,12 @@ function renderRecus() {
     sBody.innerHTML = sorted.map(s => `
       <tr>
         <td>${formatDate(s.date)}</td>
-        <td>${s.beneficiaire || s.desc}${s.objet ? ' — ' + s.objet : ''}</td>
+        <td>${escapeHtml(s.beneficiaire) || escapeHtml(s.desc)}${s.objet ? ' — ' + escapeHtml(s.objet) : ''}</td>
         <td><span class="badge ${catBadge[s.type]}">${s.type}</span></td>
         <td class="amount-cell out">-${fmt(s.montant)}</td>
         <td style="white-space:nowrap">
           <button class="btn btn-gold btn-small" onclick="imprimerRecu('out', ${s.id})">🧾 Imprimer</button>
+          <button class="btn btn-ghost btn-small" style="color:#25D366" onclick="partagerRecuWhatsApp('out', ${s.id})">📤</button>
           <button class="btn btn-ghost btn-small" title="Retirer de la liste (sans toucher au solde)" onclick="masquerRecu('out', ${s.id})">✕</button>
         </td>
       </tr>
@@ -5402,9 +5519,12 @@ function getMotRemerciement(sens, type) {
   return mots[type] || 'Merci pour votre engagement envers la Mutuelle des Travailleurs de Dorado.';
 }
 
-function imprimerRecu(sens, id) {
+// Génère le HTML complet d'un reçu (entrée ou sortie) sans l'afficher ni l'imprimer.
+// Réutilisé à la fois par l'impression papier et par le partage WhatsApp, pour ne
+// jamais avoir deux versions du même document qui pourraient diverger.
+function genererHtmlRecu(sens, id) {
   const op = sens === 'in' ? entrees.find(e => e.id === id) : sorties.find(s => s.id === id);
-  if (!op) return;
+  if (!op) return null;
 
   const numero = genererNumeroRecu(sens, id);
   const isIn = sens === 'in';
@@ -5446,7 +5566,7 @@ function imprimerRecu(sens, id) {
           <div class="recu-type-badge ${sens}">${isIn ? '✓ ENTRÉE DE FONDS' : '✓ SORTIE DE FONDS'}</div>
 
           <div class="recu-body">
-            <div class="recu-row"><span class="rk">${labelPersonne}</span><span class="rv">${nomPersonne}</span></div>
+            <div class="recu-row"><span class="rk">${labelPersonne}</span><span class="rv">${escapeHtml(nomPersonne)}</span></div>
             <div class="recu-row"><span class="rk">${labelFonction}</span><span class="rv">${valeurFonction}</span></div>
             <div class="recu-row"><span class="rk">Catégorie</span><span class="rv">${op.type}</span></div>
             ${!isIn && op.type === 'Médical' && op.fraisReels ? `
@@ -5492,6 +5612,14 @@ function imprimerRecu(sens, id) {
     </div>
   `;
 
+  return { html, numero, op, membreLie, isIn };
+}
+
+function imprimerRecu(sens, id) {
+  const r = genererHtmlRecu(sens, id);
+  if (!r) return;
+  const { html, numero, op, membreLie, isIn } = r;
+
   document.getElementById('printArea').innerHTML = html;
   attendreLibrairieQR(() => {
     rendreQRCode('recuQRCode', donneesQR(membreLie, { refDocument: numero, montant: op.montant, date: op.date }));
@@ -5506,6 +5634,52 @@ function imprimerRecu(sens, id) {
     fbUpsert(isIn ? 'entrees' : 'sorties', op);
     renderNotifications();
   }
+}
+
+// Partage le reçu via WhatsApp. Sur les téléphones qui le permettent (Web Share API
+// niveau 2, la grande majorité des Android récents), le reçu est capturé en image et
+// envoyé directement en pièce jointe avec une légende. Sur les appareils plus anciens
+// qui ne supportent pas le partage de fichier, on bascule automatiquement sur un
+// message WhatsApp texte reprenant les informations essentielles du reçu.
+async function partagerRecuWhatsApp(sens, id) {
+  const r = genererHtmlRecu(sens, id);
+  if (!r) return;
+  const { html, numero, op, membreLie, isIn } = r;
+  const nomPersonne = isIn ? op.desc : (op.beneficiaire || op.desc);
+  const legende = `Reçu MTD n°${numero} — ${nomPersonne} — ${fmt(op.montant)} — ${formatDate(op.date)}`;
+
+  document.getElementById('printArea').innerHTML = html;
+
+  attendreLibrairieQR(async () => {
+    rendreQRCode('recuQRCode', donneesQR(membreLie, { refDocument: numero, montant: op.montant, date: op.date }));
+
+    // Laisse au QR le temps de finir de se dessiner avant la capture.
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const conteneur = document.querySelector('#printArea .recu-doc');
+    const peutCapturer = typeof html2canvas !== 'undefined' && conteneur;
+    const peutPartagerFichier = navigator.canShare && navigator.share;
+
+    if (peutCapturer && peutPartagerFichier) {
+      try {
+        const canvas = await html2canvas(conteneur, { scale: 2, backgroundColor: '#ffffff' });
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        const fichier = new File([blob], `Recu_MTD_${numero}.png`, { type: 'image/png' });
+
+        if (navigator.canShare({ files: [fichier] })) {
+          await navigator.share({ files: [fichier], text: legende, title: 'Reçu MTD' });
+          return;
+        }
+      } catch (e) {
+        // Capture ou partage annulé/échoué : on bascule sur le repli texte ci-dessous.
+        console.log('Partage image du reçu impossible, repli en texte :', e.message);
+      }
+    }
+
+    // Repli : message texte WhatsApp (pas d'image jointe, mais fonctionne partout)
+    const message = `${legende}\n\nMTD — Mutuelle des Travailleurs de Dorado · Toumodi\nCe reçu a été généré depuis l'application MTD. Contactez le trésorier pour la version imprimée si besoin.`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  });
 }
 
 function imprimerRecapitulatifCA() {
@@ -8248,6 +8422,7 @@ renderAll();
 renderCorbeille();
 appliquerContactPartout();
 appliquerSignatairesPartout();
+appliquerSignatureImagesPartout();
 
 // ══════════════════════════════════════════════════════════════════════════
 // PWA — Enregistrement du service worker, détection & application des MAJ

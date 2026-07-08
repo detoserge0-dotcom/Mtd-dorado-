@@ -8,7 +8,7 @@
 // version existe et de proposer la mise à jour aux utilisateurs.
 // ══════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'mtd-gestion-v13';
+const CACHE_NAME = 'mtd-gestion-v15';
 
 // Liste des fichiers essentiels à mettre en cache pour le fonctionnement hors-ligne.
 // Adaptez les noms si vos fichiers portent des noms différents.
@@ -33,7 +33,8 @@ const FICHIERS_CDN_A_METTRE_EN_CACHE = [
   'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
 ];
 
 // ── INSTALLATION : met en cache les fichiers de l'application ──
