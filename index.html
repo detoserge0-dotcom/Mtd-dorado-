@@ -688,6 +688,11 @@
   @media print {
     html, body { height: auto !important; }
     body * { visibility: hidden; }
+    /* display:none (pas juste invisible) sur les gros conteneurs de l'app pour
+       qu'ils ne réservent plus de place dans la page — sinon un long onglet
+       actif (ex. une longue liste d'entrées) génère des pages blanches en trop
+       après le reçu, même invisible. */
+    #loginScreen, .container, .app-footer { display: none !important; }
     #printArea, #printArea * { visibility: visible; }
     #printArea {
       display: block !important;
@@ -2866,6 +2871,20 @@
       </div>
       <div style="font-size:10.5px;color:var(--muted);margin:-8px 0 16px">Choisissez « Galerie » pour une photo déjà prise, ou « Appareil photo » pour en prendre une nouvelle</div>
 
+      <div id="editeurSignatureZone" style="display:none;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:18px;background:var(--cream)">
+        <div style="font-size:12.5px;font-weight:600;margin-bottom:8px">Aperçu — ajustez si le trait n'est pas bien détouré</div>
+        <div style="display:flex;justify-content:center;background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px">
+          <canvas id="signatureCanvasApercu" style="max-width:100%;max-height:100px"></canvas>
+        </div>
+        <label class="field-label">Sensibilité du détourage</label>
+        <input type="range" id="signatureSeuilSlider" min="40" max="160" value="78" style="width:100%" oninput="mettreAJourApercuSignature()">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Glissez à droite si des morceaux du trait manquent, à gauche si du fond (ombre, papier) apparaît encore</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-add-in btn-small" style="flex:1" onclick="validerSignatureImage()">✅ Utiliser cette signature</button>
+          <button class="btn btn-ghost btn-small" onclick="annulerEditionSignature()">✕ Annuler</button>
+        </div>
+      </div>
+
       <div class="card-subtitle" style="margin-bottom:8px">Signatures actuellement enregistrées</div>
       <div class="membre-form" style="grid-template-columns:repeat(4,1fr)">
         ${['president','tresorier','secretaire','controleur'].map(role => {
@@ -3512,6 +3531,11 @@ function getParametresSignatureImages() {
 // (max 300px de large, JPEG qualité 0.75) avant de l'enregistrer, pour que la
 // photo prise directement au téléphone (souvent plusieurs Mo) reste légère à
 // stocker et à synchroniser via Firebase.
+// État de l'édition en cours : on garde l'image source (non détourée) en mémoire
+// pour pouvoir recalculer le détourage à chaque déplacement du curseur, sans
+// jamais retoucher au fichier original tant que l'utilisateur n'a pas validé.
+let signatureEnEdition = null; // { role, canvasOriginal }
+
 function importerSignatureImage(role, inputEl) {
   if (!getPermission('peutGererMdp')) { alert('Votre rôle ne permet pas de modifier les signatures (réservé au Président).'); inputEl.value = ''; return; }
   const fichier = inputEl.files && inputEl.files[0];
@@ -3523,44 +3547,16 @@ function importerSignatureImage(role, inputEl) {
     img.onload = () => {
       const largeurMax = 400;
       const ratio = Math.min(1, largeurMax / img.width);
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(img.width * ratio);
-      canvas.height = Math.round(img.height * ratio);
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const canvasOriginal = document.createElement('canvas');
+      canvasOriginal.width = Math.round(img.width * ratio);
+      canvasOriginal.height = Math.round(img.height * ratio);
+      canvasOriginal.getContext('2d').drawImage(img, 0, 0, canvasOriginal.width, canvasOriginal.height);
 
-      // Détourage automatique : isole le trait d'encre du fond de la feuille.
-      // On calcule la luminosité moyenne de la photo pour fixer un seuil adapté
-      // (s'ajuste à la luminosité de la prise de vue), puis chaque pixel plus
-      // sombre que ce seuil devient de l'encre bleu marine opaque (couleur de la
-      // charte MTD), et chaque pixel plus clair (le papier) devient transparent.
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const donnees = imageData.data;
-      let sommeLuminance = 0;
-      for (let i = 0; i < donnees.length; i += 4) {
-        sommeLuminance += 0.299 * donnees[i] + 0.587 * donnees[i + 1] + 0.114 * donnees[i + 2];
-      }
-      const luminanceMoyenne = sommeLuminance / (donnees.length / 4);
-      const seuil = luminanceMoyenne * 0.78;
-
-      for (let i = 0; i < donnees.length; i += 4) {
-        const luminance = 0.299 * donnees[i] + 0.587 * donnees[i + 1] + 0.114 * donnees[i + 2];
-        if (luminance < seuil) {
-          donnees[i] = 13; donnees[i + 1] = 27; donnees[i + 2] = 42; // bleu marine MTD
-          donnees[i + 3] = 255;
-        } else {
-          donnees[i + 3] = 0; // transparent
-        }
-      }
-      ctx.putImageData(imageData, 0, 0);
-      const dataUrl = canvas.toDataURL('image/png');
-
-      const images = getParametresSignatureImages();
-      images[role] = dataUrl;
-      localStorage.setItem('mtd_params_signature_images', JSON.stringify(images));
-      if (firebaseOK && db) db.ref('mtd_dorado/parametres/signatureImages').set(images).catch(() => setSyncStatus(false));
-      journaliser('Paramètres', `Signature manuscrite mise à jour pour le rôle : ${role}`);
-      appliquerSignatureImagesPartout();
+      signatureEnEdition = { role, canvasOriginal };
+      document.getElementById('editeurSignatureZone').style.display = '';
+      document.getElementById('signatureSeuilSlider').value = 78;
+      mettreAJourApercuSignature();
+      document.getElementById('editeurSignatureZone').scrollIntoView({ behavior: 'smooth', block: 'center' });
       inputEl.value = '';
     };
     img.onerror = () => alert("Impossible de lire cette image. Réessayez avec une autre photo.");
@@ -3568,6 +3564,81 @@ function importerSignatureImage(role, inputEl) {
   };
   lecteur.onerror = () => alert("Impossible de lire ce fichier. Réessayez.");
   lecteur.readAsDataURL(fichier);
+}
+
+// Applique le détourage (seuil réglable) sur une copie de l'image originale et
+// renvoie le canvas résultat — jamais appliqué directement sur l'original, pour
+// pouvoir recalculer à volonté pendant que l'utilisateur ajuste le curseur.
+function calculerDetourageSignature(canvasOriginal, seuilPourcent) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvasOriginal.width;
+  canvas.height = canvasOriginal.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(canvasOriginal, 0, 0);
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const donnees = imageData.data;
+  let sommeLuminance = 0;
+  for (let i = 0; i < donnees.length; i += 4) {
+    sommeLuminance += 0.299 * donnees[i] + 0.587 * donnees[i + 1] + 0.114 * donnees[i + 2];
+  }
+  const luminanceMoyenne = sommeLuminance / (donnees.length / 4);
+  const seuil = luminanceMoyenne * (seuilPourcent / 100);
+
+  for (let i = 0; i < donnees.length; i += 4) {
+    const luminance = 0.299 * donnees[i] + 0.587 * donnees[i + 1] + 0.114 * donnees[i + 2];
+    if (luminance < seuil) {
+      donnees[i] = 13; donnees[i + 1] = 27; donnees[i + 2] = 42; // bleu marine MTD
+      donnees[i + 3] = 255;
+    } else {
+      donnees[i + 3] = 0;
+    }
+  }
+  ctx.putImageData(imageData, 0, 0);
+  return canvas;
+}
+
+function mettreAJourApercuSignature() {
+  if (!signatureEnEdition) return;
+  const seuil = parseInt(document.getElementById('signatureSeuilSlider').value, 10);
+  const canvasResultat = calculerDetourageSignature(signatureEnEdition.canvasOriginal, seuil);
+
+  const apercu = document.getElementById('signatureCanvasApercu');
+  apercu.width = canvasResultat.width;
+  apercu.height = canvasResultat.height;
+  const ctx = apercu.getContext('2d');
+  ctx.clearRect(0, 0, apercu.width, apercu.height);
+  // Damier gris clair en fond de l'aperçu pour bien visualiser la transparence
+  const taille = 10;
+  for (let y = 0; y < apercu.height; y += taille) {
+    for (let x = 0; x < apercu.width; x += taille) {
+      ctx.fillStyle = ((x / taille + y / taille) % 2 === 0) ? '#f0ede4' : '#ffffff';
+      ctx.fillRect(x, y, taille, taille);
+    }
+  }
+  ctx.drawImage(canvasResultat, 0, 0);
+}
+
+function validerSignatureImage() {
+  if (!signatureEnEdition) return;
+  const { role, canvasOriginal } = signatureEnEdition;
+  const seuil = parseInt(document.getElementById('signatureSeuilSlider').value, 10);
+  const canvasResultat = calculerDetourageSignature(canvasOriginal, seuil);
+  const dataUrl = canvasResultat.toDataURL('image/png');
+
+  const images = getParametresSignatureImages();
+  images[role] = dataUrl;
+  localStorage.setItem('mtd_params_signature_images', JSON.stringify(images));
+  if (firebaseOK && db) db.ref('mtd_dorado/parametres/signatureImages').set(images).catch(() => setSyncStatus(false));
+  journaliser('Paramètres', `Signature manuscrite mise à jour pour le rôle : ${role}`);
+  appliquerSignatureImagesPartout();
+  annulerEditionSignature();
+  alert('✅ Signature enregistrée.');
+}
+
+function annulerEditionSignature() {
+  signatureEnEdition = null;
+  document.getElementById('editeurSignatureZone').style.display = 'none';
 }
 
 function supprimerSignatureImage(role) {
