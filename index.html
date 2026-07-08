@@ -2847,16 +2847,34 @@
 
     <div class="card">
       <div class="card-title">🖋️ Signatures manuscrites (photo)</div>
-      <div class="card-subtitle">Signez sur une feuille blanche, prenez-la en photo (ou scannez-la), puis importez-la ici. Elle s'insérera automatiquement sur tous les reçus et documents imprimés à la place de l'espace vierge — réservé au Président. Remplacez-la à tout moment si le titulaire change.</div>
+      <div class="card-subtitle">Signez sur une feuille blanche, prenez-la en photo (ou scannez-la), choisissez le rôle concerné, puis importez. Elle s'insérera automatiquement sur tous les reçus et documents imprimés à la place de l'espace vierge — réservé au Président.</div>
+
+      <div class="membre-form" style="grid-template-columns:1fr 1.4fr;align-items:end">
+        <div class="field-group" style="margin-bottom:0">
+          <label class="field-label">Rôle à qui attribuer la photo</label>
+          <select class="field-input" id="signatureRoleCible">
+            <option value="president">👑 Président du C.A.</option>
+            <option value="tresorier">💰 Trésorier Général</option>
+            <option value="secretaire">📝 Secrétaire Général</option>
+            <option value="controleur">🔍 Comité de Contrôle</option>
+          </select>
+        </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label class="field-label">Photo de la signature</label>
+          <input type="file" accept="image/*" class="field-input" style="padding:8px;font-size:12px" onchange="importerSignatureImage(document.getElementById('signatureRoleCible').value, this)">
+        </div>
+      </div>
+      <div style="font-size:10.5px;color:var(--muted);margin:-8px 0 16px">Choisissez « Galerie » pour une photo déjà prise, ou « Appareil photo » pour en prendre une nouvelle</div>
+
+      <div class="card-subtitle" style="margin-bottom:8px">Signatures actuellement enregistrées</div>
       <div class="membre-form" style="grid-template-columns:repeat(4,1fr)">
         ${['president','tresorier','secretaire','controleur'].map(role => {
-          const labels = { president: '👑 Président du C.A.', tresorier: '💰 Trésorier Général', secretaire: '📝 Secrétaire Général', controleur: '🔍 Comité de Contrôle' };
+          const labels = { president: '👑 Président', tresorier: '💰 Trésorier', secretaire: '📝 Secrétaire', controleur: '🔍 Contrôle' };
           return `
         <div class="field-group" style="margin-bottom:0">
           <label class="field-label">${labels[role]}</label>
           <div id="apercuSignature_${role}" style="min-height:50px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px dashed var(--border);border-radius:8px;margin-bottom:6px;padding:4px"></div>
-          <input type="file" accept="image/*" capture="environment" class="field-input" style="padding:8px;font-size:12px" onchange="importerSignatureImage('${role}', this)">
-          <button class="btn btn-ghost btn-small" style="margin-top:5px;width:100%" onclick="supprimerSignatureImage('${role}')">🗑️ Retirer</button>
+          <button class="btn btn-ghost btn-small" style="width:100%" onclick="supprimerSignatureImage('${role}')">🗑️ Retirer</button>
         </div>`;
         }).join('')}
       </div>
