@@ -6150,7 +6150,7 @@ function imprimerFicheMembre(id) {
 
   document.getElementById('printArea').innerHTML = html;
   attendreLibrairieQR(() => {
-    rendreQRCode('ficheQRCode', donneesQR(m), 80);
+    rendreQRCode('ficheQRCode', donneesQR(m), 100);
     window.print();
   });
 }
@@ -6508,22 +6508,17 @@ function calculerTotauxMembre(m, entreesSrc, sortiesSrc) {
 
 // Construit le texte encodé dans le QR code. Pour un membre reconnu, on inclut
 // toutes ses informations utiles ; sinon on encode uniquement la référence du document.
+// Le QR n'a besoin que d'identifier le membre : le scan va ensuite chercher sa
+// fiche à jour (localement ou sur Firebase), donc inutile d'y encoder tous les
+// champs — ça alourdit le QR pour rien et le rend plus difficile à scanner une
+// fois imprimé en petit format. On garde juste de quoi identifier + afficher un
+// message utile en cas d'échec de recherche (prénom/nom).
 function donneesQR(membre, extra) {
   const infos = membre ? {
     type: 'MTD-MEMBRE',
     numero: membre.numero,
     nom: membre.nom,
     prenom: membre.prenom,
-    sexe: membre.sexe || '',
-    telephone: membre.telephone || '',
-    quartier: membre.quartier || '',
-    fonction: membre.fonction || '',
-    typeTravailleur: membre.typeTravailleur || '',
-    dateNaissance: membre.dateNaissance || '',
-    dateAdhesion: membre.dateAdhesion || '',
-    statut: membre.statut || '',
-    conjoint: membre.conjoint || '',
-    enfants: membre.enfants || 0,
   } : { type: 'MTD-DOCUMENT' };
   return JSON.stringify(Object.assign(infos, extra || {}));
 }
@@ -6535,13 +6530,13 @@ function rendreQRCode(containerId, texte, taille) {
   const el = document.getElementById(containerId);
   if (!el) return;
   el.innerHTML = '';
-  const t = taille || 66;
+  const t = taille || 100;
   if (typeof QRCode === 'undefined') {
     el.innerHTML = `<div style="width:${t}px;height:${t}px;display:flex;align-items:center;justify-content:center;font-size:7.5px;color:#999;text-align:center;padding:3px;box-sizing:border-box;line-height:1.2">QR indisponible<br>(hors-ligne)</div>`;
     return;
   }
   try {
-    new QRCode(el, { text: texte, width: t, height: t, correctLevel: QRCode.CorrectLevel.M });
+    new QRCode(el, { text: texte, width: t, height: t, correctLevel: QRCode.CorrectLevel.Q });
   } catch (e) {
     el.innerHTML = `<div style="width:${t}px;height:${t}px;display:flex;align-items:center;justify-content:center;font-size:7.5px;color:#999;text-align:center;padding:3px;box-sizing:border-box">QR indisponible</div>`;
   }
@@ -7317,7 +7312,7 @@ function imprimerHistoriqueMembre() {
   `;
   document.getElementById('printArea').innerHTML = html;
   attendreLibrairieQR(() => {
-    rendreQRCode('histQRCode', donneesQR(m), 80);
+    rendreQRCode('histQRCode', donneesQR(m), 100);
     window.print();
   });
 }
