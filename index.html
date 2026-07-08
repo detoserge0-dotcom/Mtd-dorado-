@@ -1843,6 +1843,10 @@
           <label class="field-label">Nombre d'enfants déclarés</label>
           <input type="number" class="field-input" id="mEnfants" placeholder="0" min="0" max="3">
         </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label class="field-label">Parrainé par (optionnel)</label>
+          <input type="text" class="field-input" id="mParrainePar" list="listeMembresNoms" placeholder="Nom du membre parrain">
+        </div>
       </div>
 
       <div class="card-title" style="margin-top:20px;font-size:14px">👨‍👩‍👧 Ayants droit déclarés</div>
@@ -1903,7 +1907,8 @@
           </div>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+          <button class="btn btn-small" style="background:#25D366;color:#fff;border-color:#25D366" onclick="partagerInvitationWhatsApp()">📤 Inviter un nouveau membre via WhatsApp</button>
           <button class="btn btn-ghost btn-small" id="btnToggleAllMembres" onclick="toggleTousMembres()">🔽 Tout déplier</button>
         </div>
 
@@ -1917,6 +1922,18 @@
     </div>
 
     <div id="membreDetailZone" style="display:none"></div>
+
+    <div class="card" id="preinscriptionsCard" style="display:none">
+      <div class="card-title">📥 Pré-inscriptions en attente <span id="preinscriptionsBadge" class="badge" style="background:var(--red-light);color:var(--red);margin-left:6px"></span></div>
+      <div class="card-subtitle">Personnes ayant rempli le formulaire public de pré-adhésion — à vérifier avant de créer la fiche membre complète</div>
+      <div id="preinscriptionsZone"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏆 Classement des parrains</div>
+      <div class="card-subtitle">Membres ayant recruté le plus de nouveaux adhérents — un bon levier pour encourager le recrutement</div>
+      <div id="classementParrainsZone"></div>
+    </div>
 
     <div class="card">
       <div class="card-title">📅 Rapport mensuel & annuel des adhésions</div>
@@ -2941,6 +2958,10 @@ const firebaseConfig = {
   appId: "1:28042828612:web:5247a61cc3b20c5c661511"
 };
 
+// URL publique du formulaire de pré-inscription (hébergé à côté de index.html
+// sur GitHub Pages). Si le dépôt est renommé ou déplacé, mettre à jour ici.
+const URL_PREINSCRIPTION = 'https://detoserge0-dotcom.github.io/Mtd-dorado-/adherer.html';
+
 let db = null;
 let firebaseOK = false;
 
@@ -3648,6 +3669,7 @@ function initialiserFirebase() {
     demandes  = normaliserCollection(data.demandes);
     reunions  = normaliserCollection(data.reunions);
     corbeille = normaliserCollection(data.corbeille);
+    preinscriptions = normaliserCollection(data.preinscriptions);
 
     const compteurs = data.compteurs || {};
     compteurEntrees = Math.max(compteurEntrees, compteurs.entrees || data.compteurEntrees || 0);
@@ -3697,6 +3719,7 @@ function initialiserFirebase() {
     sauvegarderLocal();
     renderAll();
     renderCorbeille();
+    renderPreinscriptions();
   }, err => setSyncStatus(false));
 
   // Surveiller la connexion
@@ -3843,6 +3866,7 @@ let membreEnEdition = null;
 let membresDepliees = new Set();
 let membresVisiblesIds = [];
 let corbeille = JSON.parse(localStorage.getItem('mtd_corbeille') || '[]');
+let preinscriptions = JSON.parse(localStorage.getItem('mtd_preinscriptions') || '[]');
 let entreesDepliees = new Set();
 let entreesVisiblesIds = [];
 let sortiesDepliees = new Set();
@@ -4212,6 +4236,7 @@ function sauvegarderLocal() {
   localStorage.setItem('mtd_demandes', JSON.stringify(demandes));
   localStorage.setItem('mtd_reunions', JSON.stringify(reunions));
   localStorage.setItem('mtd_corbeille', JSON.stringify(corbeille));
+  localStorage.setItem('mtd_preinscriptions', JSON.stringify(preinscriptions));
   const horodatage = new Date().toISOString();
   localStorage.setItem('mtd_derniere_sauvegarde', horodatage);
   afficherIndicateurSauvegarde(horodatage);
@@ -5850,6 +5875,7 @@ function enregistrerMembre() {
   const statut = document.getElementById('mStatut').value;
   const conjoint = document.getElementById('mConjoint').value.trim();
   const enfants = parseInt(document.getElementById('mEnfants').value) || 0;
+  const parrainePar = document.getElementById('mParrainePar').value.trim();
   let numero = document.getElementById('mNumero').value.trim();
 
   if (!nom || !prenom) {
@@ -5864,7 +5890,7 @@ function enregistrerMembre() {
   if (membreEnEdition !== null) {
     const idx = membres.findIndex(m => m.id === membreEnEdition);
     if (idx !== -1) {
-      membres[idx] = { ...membres[idx], nom, prenom, sexe, dateNaissance, telephone, quartier, fonction, typeTravailleur, dateAdhesion, statut, conjoint, enfants, numero: numero || membres[idx].numero, ayantsDroit: [...ayantsDroitTemp],
+      membres[idx] = { ...membres[idx], nom, prenom, sexe, dateNaissance, telephone, quartier, fonction, typeTravailleur, dateAdhesion, statut, conjoint, enfants, parrainePar, numero: numero || membres[idx].numero, ayantsDroit: [...ayantsDroitTemp],
         dernierModifiePar: session?.nom || '—', dernierModifieLe: new Date().toISOString() };
       fbUpsert('membres', membres[idx]);
     }
@@ -5877,11 +5903,11 @@ function enregistrerMembre() {
     if (!numero) numero = genererNumeroMembre();
     const nouveauMembre = {
       id: Date.now(), numero, nom, prenom, sexe, dateNaissance, telephone, quartier,
-      fonction, typeTravailleur, dateAdhesion, statut, conjoint, enfants, ayantsDroit: [...ayantsDroitTemp]
+      fonction, typeTravailleur, dateAdhesion, statut, conjoint, enfants, parrainePar, ayantsDroit: [...ayantsDroitTemp]
     };
     membres.push(nouveauMembre);
     fbUpsert('membres', nouveauMembre);
-    journaliser('Membre', `Nouveau membre enregistré : ${prenom} ${nom} (${numero})`);
+    journaliser('Membre', `Nouveau membre enregistré : ${prenom} ${nom} (${numero})${parrainePar ? ' — parrainé par ' + parrainePar : ''}`);
   }
 
   ayantsDroitTemp = [];
@@ -5923,7 +5949,7 @@ function renderAyantsDroitTemp() {
 }
 
 function viderFormulaireMembre() {
-  ['mNumero','mNom','mPrenom','mDateNaissance','mTelephone','mQuartier','mFonction','mConjoint','mEnfants'].forEach(id => {
+  ['mNumero','mNom','mPrenom','mDateNaissance','mTelephone','mQuartier','mFonction','mConjoint','mEnfants','mParrainePar'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('mSexe').value = 'Masculin';
@@ -5952,6 +5978,7 @@ function modifierMembre(id) {
   document.getElementById('mStatut').value = m.statut || 'A jour';
   document.getElementById('mConjoint').value = m.conjoint || '';
   document.getElementById('mEnfants').value = m.enfants || 0;
+  document.getElementById('mParrainePar').value = m.parrainePar || '';
   ayantsDroitTemp = Array.isArray(m.ayantsDroit) ? JSON.parse(JSON.stringify(m.ayantsDroit)) : [];
   renderAyantsDroitTemp();
   document.getElementById('btnSaveMembre').textContent = '✓ Enregistrer les modifications';
@@ -6020,6 +6047,7 @@ function renderMembreDetailRow(m) {
             <div class="detail-field"><div class="df-label">Date d'adhésion</div><div class="df-value">${formatDate(m.dateAdhesion)}</div></div>
             <div class="detail-field"><div class="df-label">Conjoint(e) déclaré(e)</div><div class="df-value">${escapeHtml(m.conjoint) || 'Aucun(e)'}</div></div>
             <div class="detail-field"><div class="df-label">Enfants déclarés</div><div class="df-value">${m.enfants || 0} / 3 max.</div></div>
+            <div class="detail-field"><div class="df-label">Parrainé par</div><div class="df-value">${escapeHtml(m.parrainePar) || '—'}</div></div>
             ${m.dernierModifiePar ? `<div class="detail-field"><div class="df-label">Dernière modification</div><div class="df-value">${escapeHtml(m.dernierModifiePar)} · ${new Date(m.dernierModifieLe).toLocaleString('fr-FR')}</div></div>` : ''}
           </div>
           <div class="ayants-droit-panel">
@@ -6031,14 +6059,139 @@ function renderMembreDetailRow(m) {
           <button class="btn btn-gold btn-small" onclick="imprimerFicheMembre(${m.id})">🖨️ Imprimer la fiche</button>
           <button class="btn btn-ghost btn-small" onclick="voirHistoriqueMembre(${m.id})">📜 Historique cotisations & prestations</button>
           <button class="btn btn-ghost btn-small" onclick="modifierMembre(${m.id})">✏️ Modifier</button>
+          <button class="btn btn-ghost btn-small" style="background:#25D366;color:#fff;border-color:#25D366" onclick="partagerInvitationWhatsApp(${m.id})">📤 Inviter via WhatsApp (parrain)</button>
           <button class="btn btn-ghost btn-small" onclick="voirDetailMembre(${m.id})">Fermer</button>
         </div>
       </td>
     </tr>`;
 }
 
+// Compte, pour chaque membre, combien de nouveaux adhérents il a personnellement
+// recruté (champ "Parrainé par" rempli à l'enregistrement). Affiche un petit
+// classement pour encourager et valoriser le recrutement au sein de la mutuelle.
+function renderClassementParrains() {
+  const zone = document.getElementById('classementParrainsZone');
+  if (!zone) return;
+
+  const compteur = {};
+  membres.forEach(m => {
+    const parrain = (m.parrainePar || '').trim();
+    if (!parrain) return;
+    compteur[parrain] = (compteur[parrain] || 0) + 1;
+  });
+
+  const classement = Object.entries(compteur).sort((a, b) => b[1] - a[1]);
+  if (classement.length === 0) {
+    zone.innerHTML = '<div class="empty-state">Aucun parrainage enregistré pour le moment. Renseignez le champ "Parrainé par" en ajoutant un membre pour faire apparaître le classement ici.</div>';
+    return;
+  }
+
+  const medailles = ['🥇', '🥈', '🥉'];
+  zone.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+      ${classement.slice(0, 10).map(([nom, n], i) => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--cream);border-radius:8px">
+          <span style="font-size:16px;min-width:24px">${medailles[i] || '🎖️'}</span>
+          <span style="flex:1;font-weight:600">${escapeHtml(nom)}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--green)">${n} membre${n > 1 ? 's' : ''} recruté${n > 1 ? 's' : ''}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PRÉ-INSCRIPTIONS PUBLIQUES (formulaire adherer.html, sans connexion requise)
+// ══════════════════════════════════════════════════════════════════════════
+function renderPreinscriptions() {
+  const carte = document.getElementById('preinscriptionsCard');
+  const zone = document.getElementById('preinscriptionsZone');
+  const badge = document.getElementById('preinscriptionsBadge');
+  if (!carte || !zone) return;
+
+  const enAttente = preinscriptions.filter(p => !p.statut || p.statut === 'nouvelle')
+    .sort((a,b) => (b.dateSoumission || '').localeCompare(a.dateSoumission || ''));
+
+  if (enAttente.length === 0) {
+    carte.style.display = 'none';
+    return;
+  }
+  carte.style.display = '';
+  badge.textContent = enAttente.length;
+
+  zone.innerHTML = enAttente.map(p => `
+    <div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <b>${escapeHtml(p.prenom)} ${escapeHtml(p.nom)}</b>
+        <span style="font-size:11.5px;color:var(--muted)">Soumis le ${formatDate(p.dateSoumission)}</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.7">
+        📞 ${escapeHtml(p.telephone) || '—'} · 📍 ${escapeHtml(p.quartier) || '—'} · 💼 ${escapeHtml(p.fonction) || '—'}
+        ${p.parrainePar ? `<br>🤝 Parrainé par : ${escapeHtml(p.parrainePar)}` : ''}
+        ${p.message ? `<br>💬 « ${escapeHtml(p.message)} »` : ''}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-add-in btn-small" onclick="convertirPreinscription('${p.id}')">✅ Convertir en membre</button>
+        <button class="btn btn-ghost btn-small" onclick="rejeterPreinscription('${p.id}')">✕ Rejeter</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Reporte les infos de la pré-inscription dans le formulaire "Nouveau membre"
+// pour que le gestionnaire vérifie/complète avant l'enregistrement définitif.
+function convertirPreinscription(id) {
+  if (!getPermission('peutGererMembres')) { alert('Votre rôle ne permet pas de gérer les membres.'); return; }
+  const p = preinscriptions.find(x => x.id === id);
+  if (!p) return;
+
+  viderFormulaireMembre();
+  document.getElementById('mNom').value = p.nom || '';
+  document.getElementById('mPrenom').value = p.prenom || '';
+  document.getElementById('mTelephone').value = p.telephone || '';
+  document.getElementById('mQuartier').value = p.quartier || '';
+  document.getElementById('mFonction').value = p.fonction || '';
+  document.getElementById('mParrainePar').value = p.parrainePar || '';
+
+  p.statut = 'convertie';
+  fbUpsert('preinscriptions', p);
+  sauvegarder();
+  renderPreinscriptions();
+
+  document.getElementById('mNom').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  alert('📋 Les informations ont été reportées dans le formulaire ci-dessus. Vérifiez-les, complétez ce qui manque (sexe, date de naissance...) puis cliquez sur "Enregistrer le membre".');
+}
+
+function rejeterPreinscription(id) {
+  if (!getPermission('peutGererMembres')) { alert('Votre rôle ne permet pas de gérer les membres.'); return; }
+  const p = preinscriptions.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`Rejeter la pré-inscription de ${p.prenom} ${p.nom} ?`)) return;
+  p.statut = 'rejetee';
+  fbUpsert('preinscriptions', p);
+  sauvegarder();
+  renderPreinscriptions();
+}
+
+// Ouvre WhatsApp avec un message d'invitation pré-rempli, incluant un lien vers
+// le formulaire public de pré-inscription. Si un membre parrain est fourni (id),
+// son nom est ajouté au message et transmis en paramètre d'URL pour pré-remplir
+// automatiquement le champ "Parrainé par" sur le formulaire du prospect.
+function partagerInvitationWhatsApp(idParrain) {
+  const parrain = idParrain !== undefined ? membres.find(m => m.id === idParrain) : null;
+  const nomParrain = parrain ? `${parrain.prenom} ${parrain.nom}` : '';
+  const lien = nomParrain ? `${URL_PREINSCRIPTION}?parrain=${encodeURIComponent(nomParrain)}` : URL_PREINSCRIPTION;
+
+  const message = nomParrain
+    ? `Bonjour ! Je vous invite à rejoindre la MTD (Mutuelle des Travailleurs de Dorado) à Toumodi — une caisse de solidarité qui aide ses membres en cas de coup dur (maladie, décès, événements familiaux...).\n\nJe serai votre parrain pour l'adhésion. Remplissez ce petit formulaire pour vous pré-inscrire, notre équipe vous recontactera :\n${lien}`
+    : `Bonjour ! Je vous invite à rejoindre la MTD (Mutuelle des Travailleurs de Dorado) à Toumodi — une caisse de solidarité qui aide ses membres en cas de coup dur (maladie, décès, événements familiaux...).\n\nRemplissez ce petit formulaire pour vous pré-inscrire, notre équipe vous recontactera :\n${lien}`;
+
+  window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+}
+
 function renderMembres() {
   syncSelecteurTri('membres', 'mSortBy');
+  renderClassementParrains();
   const search = (document.getElementById('mSearch')?.value || '').toLowerCase().trim();
   const filtreStatut = document.getElementById('mFilterStatut')?.value || '';
 
@@ -6292,6 +6445,7 @@ function renderAll() {
   renderBudget();
   renderRecus();
   renderMembres();
+  renderPreinscriptions();
   renderDatalistMembres();
   renderSidebarBadges();
   renderNotifications();

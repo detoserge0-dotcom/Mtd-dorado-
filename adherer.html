@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adhérer à la MTD — Mutuelle des Travailleurs de Dorado</title>
+<style>
+  :root {
+    --navy: #0D1B2A;
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --cream: #FAF6EF;
+    --green: #3D8B5F;
+    --green-light: #E8F5EC;
+    --red: #B84A3E;
+    --red-light: #FBEAE8;
+    --text: #1A1209;
+    --muted: #7A6F5C;
+    --border: #E3DBC9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--cream);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .header {
+    background: var(--navy);
+    color: #fff;
+    padding: 28px 20px 22px;
+    text-align: center;
+  }
+  .header .logo {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--gold); color: var(--navy);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 18px; margin: 0 auto 10px;
+    border: 2px solid var(--gold-light);
+  }
+  .header h1 { font-size: 18px; margin: 0 0 4px; }
+  .header p { font-size: 12.5px; color: var(--gold-light); margin: 0; }
+
+  .container { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  .intro {
+    background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; margin-bottom: 18px; font-size: 13.5px; line-height: 1.6; color: var(--muted);
+  }
+  .intro b { color: var(--text); }
+
+  .parrain-banner {
+    background: var(--green-light); color: var(--green); border-radius: 10px;
+    padding: 10px 14px; font-size: 13px; font-weight: 600; margin-bottom: 18px; display: none;
+  }
+
+  .field-group { margin-bottom: 14px; }
+  .field-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+  .field-input {
+    width: 100%; padding: 11px 13px; border: 1px solid var(--border); border-radius: 9px;
+    font-size: 14.5px; font-family: inherit; background: #fff; color: var(--text);
+  }
+  .field-input:focus { outline: none; border-color: var(--gold); }
+  textarea.field-input { resize: vertical; min-height: 70px; }
+
+  .btn-submit {
+    width: 100%; padding: 14px; background: var(--navy); color: #fff; border: none;
+    border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px;
+  }
+  .btn-submit:disabled { opacity: 0.6; }
+  .btn-submit:active { background: var(--navy-light, #15293D); }
+
+  .msg { padding: 12px 14px; border-radius: 9px; font-size: 13px; margin-top: 12px; display: none; }
+  .msg-success { background: var(--green-light); color: var(--green); }
+  .msg-error { background: var(--red-light); color: var(--red); }
+
+  .success-screen { display: none; text-align: center; padding: 40px 20px; }
+  .success-screen .icon { font-size: 46px; margin-bottom: 12px; }
+  .success-screen h2 { font-size: 18px; margin: 0 0 10px; }
+  .success-screen p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+  .footer-note {
+    text-align: center; font-size: 11.5px; color: var(--muted); margin-top: 24px; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo">MTD</div>
+    <h1>Mutuelle des Travailleurs de Dorado</h1>
+    <p>Toumodi, Côte d'Ivoire</p>
+  </div>
+
+  <div class="container">
+
+    <div id="formScreen">
+      <div class="intro">
+        <b>Bienvenue !</b> La MTD est une caisse de solidarité entre travailleurs : elle aide ses membres en cas de coup dur (maladie, décès, événements familiaux...) grâce aux cotisations de tous.<br><br>
+        Remplissez ce formulaire pour vous <b>pré-inscrire</b>. Notre équipe vous recontactera rapidement pour finaliser votre adhésion.
+      </div>
+
+      <div class="parrain-banner" id="parrainBanner"></div>
+
+      <form id="preForm" onsubmit="return false;">
+        <div class="field-group">
+          <label class="field-label">Prénom *</label>
+          <input type="text" class="field-input" id="pPrenom" required autocomplete="given-name">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Nom *</label>
+          <input type="text" class="field-input" id="pNom" required autocomplete="family-name">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Téléphone *</label>
+          <input type="tel" class="field-input" id="pTelephone" required autocomplete="tel" placeholder="Ex: 07 47 65 19 92">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Quartier / Ville</label>
+          <input type="text" class="field-input" id="pQuartier" placeholder="Ex: Toumodi centre">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Profession / Activité</label>
+          <input type="text" class="field-input" id="pFonction" placeholder="Ex: Commerçant, Enseignant...">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Message (optionnel)</label>
+          <textarea class="field-input" id="pMessage" placeholder="Une question, une précision..."></textarea>
+        </div>
+
+        <button type="button" class="btn-submit" id="btnSubmit" onclick="soumettre()">Envoyer ma pré-inscription</button>
+        <div class="msg msg-error" id="msgErreur"></div>
+      </form>
+    </div>
+
+    <div class="success-screen" id="successScreen">
+      <div class="icon">✅</div>
+      <h2>Pré-inscription envoyée !</h2>
+      <p>Merci — un membre de l'équipe MTD va vous recontacter très prochainement au numéro indiqué pour finaliser votre adhésion.</p>
+    </div>
+
+    <div class="footer-note">
+      MTD — Mutuelle des Travailleurs de Dorado · Toumodi, Côte d'Ivoire<br>
+      WhatsApp 0747 651 992
+    </div>
+  </div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  // Même configuration Firebase que l'application principale (clé publique côté client,
+  // sans risque : l'accès est contrôlé par les règles de sécurité côté serveur, pas par
+  // le secret de cette clé). L'écriture se fait via une authentification anonyme.
+  const firebaseConfig = {
+    apiKey: "AIzaSyBH_JpQhF2IU_ksEXdLKuoKl_OoAA4sP1s",
+    authDomain: "mtd-2-4131d.firebaseapp.com",
+    databaseURL: "https://mtd-2-4131d-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "mtd-2-4131d",
+    storageBucket: "mtd-2-4131d.firebasestorage.app",
+    messagingSenderId: "28042828612",
+    appId: "1:28042828612:web:5247a61cc3b20c5c661511"
+  };
+
+  let db = null;
+  let authPrete = false;
+  let erreurAuth = '';
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    firebase.auth().signInAnonymously()
+      .then(() => { authPrete = true; })
+      .catch(err => {
+        authPrete = false;
+        erreurAuth = err.code || err.message || 'erreur inconnue';
+        console.log('Échec de la connexion anonyme Firebase :', erreurAuth);
+      });
+  } catch (e) {
+    erreurAuth = e.message;
+    console.log('Firebase indisponible :', e.message);
+  }
+
+  // Pré-remplit la bannière de parrainage si l'invitation contient ?parrain=Nom
+  const params = new URLSearchParams(window.location.search);
+  const parrain = params.get('parrain') || '';
+  if (parrain) {
+    const banniere = document.getElementById('parrainBanner');
+    banniere.style.display = 'block';
+    banniere.textContent = `🤝 Vous avez été invité(e) par ${parrain}`;
+  }
+
+  function afficherErreur(texte) {
+    const el = document.getElementById('msgErreur');
+    el.textContent = texte;
+    el.style.display = 'block';
+  }
+
+  async function soumettre() {
+    const prenom = document.getElementById('pPrenom').value.trim();
+    const nom = document.getElementById('pNom').value.trim();
+    const telephone = document.getElementById('pTelephone').value.trim();
+    const quartier = document.getElementById('pQuartier').value.trim();
+    const fonction = document.getElementById('pFonction').value.trim();
+    const message = document.getElementById('pMessage').value.trim();
+
+    document.getElementById('msgErreur').style.display = 'none';
+
+    if (!prenom || !nom || !telephone) {
+      afficherErreur('Veuillez renseigner au minimum votre prénom, nom et téléphone.');
+      return;
+    }
+    if (!db) {
+      afficherErreur('Connexion au serveur indisponible. Vérifiez votre connexion internet et réessayez.');
+      return;
+    }
+
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours...';
+
+    // Laisse un court instant à l'authentification anonyme de se terminer si elle
+    // vient tout juste d'être lancée (cas d'une soumission très rapide).
+    let tentatives = 0;
+    while (!authPrete && !erreurAuth && tentatives < 20) {
+      await new Promise(r => setTimeout(r, 150));
+      tentatives++;
+    }
+
+    if (!authPrete) {
+      afficherErreur(`⚠️ Authentification impossible (code technique : ${erreurAuth || 'délai dépassé'}). Transmettez ce code à l'administrateur MTD.`);
+      btn.disabled = false;
+      btn.textContent = 'Envoyer ma pré-inscription';
+      return;
+    }
+
+    const id = 'pre_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    const donnees = {
+      id, prenom, nom, telephone, quartier, fonction, message,
+      parrainePar: parrain || '',
+      statut: 'nouvelle',
+      dateSoumission: new Date().toISOString()
+    };
+
+    try {
+      await db.ref('mtd_dorado/preinscriptions/' + id).set(donnees);
+      document.getElementById('formScreen').style.display = 'none';
+      document.getElementById('successScreen').style.display = 'block';
+    } catch (e) {
+      afficherErreur("L'envoi a échoué. Vérifiez votre connexion internet et réessayez.");
+      btn.disabled = false;
+      btn.textContent = 'Envoyer ma pré-inscription';
+    }
+  }
+</script>
+</body>
+</html>
