@@ -8,7 +8,14 @@
 // version existe et de proposer la mise à jour aux utilisateurs.
 // ══════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'mtd-gestion-v25';
+const CACHE_NAME = 'mtd-gestion-v27';
+
+// Cache séparé et STABLE pour les librairies externes (CDN). Contrairement à
+// CACHE_NAME, celui-ci n'est PAS bumpé à chaque déploiement — sinon chaque mise
+// à jour de l'app retélécharge inutilement ~7 librairies externes qui n'ont pas
+// changé, ce qui peut sembler "bloqué" sur une connexion lente. On ne change
+// ce nom que si la LISTE des librairies CDN change elle-même.
+const CDN_CACHE_NAME = 'mtd-cdn-vendor-v1';
 
 // Liste des fichiers essentiels à mettre en cache pour le fonctionnement hors-ligne.
 // Adaptez les noms si vos fichiers portent des noms différents.
@@ -37,34 +44,37 @@ const FICHIERS_CDN_A_METTRE_EN_CACHE = [
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
 ];
 
+function estUrlCDN(url) {
+  return FICHIERS_CDN_A_METTRE_EN_CACHE.includes(url) || url.includes('gstatic.com') || url.includes('cdnjs.cloudflare.com');
+}
+
 // ── INSTALLATION : met en cache les fichiers de l'application ──
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      // Chaque fichier local est mis en cache individuellement : si une icône
-      // n'existe pas encore ou porte un nom différent, ça n'empêche pas index.html
-      // et manifest.json d'être mis en cache correctement.
-      const local = FICHIERS_A_METTRE_EN_CACHE.map((url) =>
-        cache.add(url).catch(() => {})
-      );
-      // Chaque script CDN est mis en cache INDIVIDUELLEMENT (pas addAll) : si un
-      // seul échoue (CORS, CDN temporairement indisponible...), les autres sont
-      // quand même sauvegardés au lieu de tout annuler en bloc.
-      const cdn = FICHIERS_CDN_A_METTRE_EN_CACHE.map((url) =>
-        cache.add(url).catch(() => {})
-      );
-      return Promise.all([...local, ...cdn]);
-    })
+    Promise.all([
+      // Fichiers locaux : petits, rapides, toujours réenregistrés à chaque version.
+      caches.open(CACHE_NAME).then((cache) =>
+        Promise.all(FICHIERS_A_METTRE_EN_CACHE.map((url) => cache.add(url).catch(() => {})))
+      ),
+      // Librairies CDN : cache stable, on ne retélécharge que ce qui manque encore
+      // (donc quasi instantané après le tout premier chargement de l'app).
+      caches.open(CDN_CACHE_NAME).then(async (cache) => {
+        await Promise.all(FICHIERS_CDN_A_METTRE_EN_CACHE.map(async (url) => {
+          const dejaEnCache = await cache.match(url);
+          if (!dejaEnCache) await cache.add(url).catch(() => {});
+        }));
+      })
+    ])
   );
 });
 
-// ── ACTIVATION : supprime les anciens caches obsolètes ──
+// ── ACTIVATION : supprime les anciens caches obsolètes (jamais le cache CDN stable) ──
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((noms) =>
       Promise.all(
         noms
-          .filter((nom) => nom !== CACHE_NAME)
+          .filter((nom) => nom !== CACHE_NAME && nom !== CDN_CACHE_NAME)
           .map((nom) => caches.delete(nom))
       )
     ).then(() => self.clients.claim())
@@ -74,6 +84,7 @@ self.addEventListener('activate', (event) => {
 // ── RÉCUPÉRATION DES PAGES : réseau en priorité, cache en secours (hors-ligne) ──
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const nomCache = estUrlCDN(event.request.url) ? CDN_CACHE_NAME : CACHE_NAME;
 
   event.respondWith(
     fetch(event.request)
@@ -86,7 +97,7 @@ self.addEventListener('fetch', (event) => {
         // provoquait une disponibilité hors-ligne incohérente d'une fois sur l'autre.
         const copie = reponse.clone();
         event.waitUntil(
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copie)).catch(() => {})
+          caches.open(nomCache).then((cache) => cache.put(event.request, copie)).catch(() => {})
         );
         return reponse;
       })
