@@ -8709,6 +8709,19 @@ appliquerSignatureImagesPartout();
 let pwaDeferredPrompt = null;
 let swRegistration = null;
 let swEnAttente = null;
+let rechargementEnCours = false;
+
+// Recharge la page une seule fois pour activer la nouvelle version — appelé
+// soit par l'évènement 'controllerchange' (cas normal), soit en filet de
+// sécurité dès que le nouveau service worker termine son activation (cas où
+// 'controllerchange' ne se déclenche pas, ex. tout premier lancement de l'app
+// sans version active auparavant). Sans ce filet, le bouton "Mettre à jour"
+// restait affiché indéfiniment même après un clic réussi.
+function forcerRechargementUnique() {
+  if (rechargementEnCours) return;
+  rechargementEnCours = true;
+  window.location.reload();
+}
 
 function afficherMajDisponible() {
   const btnBarre = document.getElementById('btnMajDisponible');
@@ -8759,12 +8772,7 @@ if ('serviceWorker' in navigator) {
   setInterval(() => verifierMiseAJour(false), 30 * 60 * 1000);
 
   // Quand le nouveau service worker prend le contrôle, on recharge une seule fois
-  let rechargementEnCours = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (rechargementEnCours) return;
-    rechargementEnCours = true;
-    window.location.reload();
-  });
+  navigator.serviceWorker.addEventListener('controllerchange', forcerRechargementUnique);
 }
 
 function verifierMiseAJour(manuel) {
@@ -8788,7 +8796,17 @@ function verifierMiseAJour(manuel) {
 
 function appliquerMiseAJour() {
   if (!swEnAttente) { verifierMiseAJour(true); return; }
-  swEnAttente.postMessage({ type: 'SKIP_WAITING' });
+  const worker = swEnAttente;
+  worker.postMessage({ type: 'SKIP_WAITING' });
+  // Filet de sécurité : si l'évènement 'controllerchange' ne se déclenche pas
+  // (aucune version n'était encore active avant ce clic), on force quand même
+  // le rechargement dès que ce nouveau service worker termine son activation.
+  worker.addEventListener('statechange', () => {
+    if (worker.state === 'activated') forcerRechargementUnique();
+  });
+  // Deuxième filet, au cas où même 'statechange' ne serait pas fiable sur cet
+  // appareil : on force le rechargement après un court délai dans tous les cas.
+  setTimeout(forcerRechargementUnique, 1500);
 }
 
 window.addEventListener('beforeinstallprompt', (e) => {
