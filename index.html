@@ -860,6 +860,100 @@
   }
   .recu-qr-box { background:#fff; padding:4px; border-radius:6px; border:1px solid #E3DBC9; line-height:0; }
   .recu-qr-legende { font-size: 9.5px; color: #7A6F5C; text-align: left; max-width: 170px; line-height: 1.35; }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     REÇU — DESIGN V2 (bandeau navy/or, sceau officiel, badges de vérification)
+     Classes dédiées "rv2-*" pour ne pas affecter les autres documents imprimés
+     (fiche membre, PV, rapports, récap CA) qui gardent l'ancien style .recu-*.
+     ══════════════════════════════════════════════════════════════════════ */
+  .rv2-frame { border-radius: 16px !important; }
+  .rv2-frame::before { border-radius: 13px !important; }
+
+  .rv2-header {
+    background: linear-gradient(135deg, #0D1B2A 0%, #1E3A52 100%);
+    margin: -8mm -11mm 0; padding: 18px 22px 16px;
+    border-radius: 13px 13px 0 0;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  }
+  .rv2-logo-mark { font-family: 'Fraunces', serif; font-weight: 800; font-size: 30px; color: #E8C97A; letter-spacing: 1px; line-height: 1; }
+  .rv2-logo-caption { font-size: 7.5px; letter-spacing: 1.3px; color: #E8C97A; text-transform: uppercase; margin-top: 4px; opacity: 0.9; }
+  .rv2-ribbon {
+    background: linear-gradient(135deg, #15293D, #0D1B2A);
+    border: 1px solid #C9A84C; border-radius: 6px;
+    padding: 8px 12px; text-align: center; max-width: 145px; flex-shrink: 0;
+  }
+  .rv2-ribbon-icon { font-size: 15px; margin-bottom: 3px; }
+  .rv2-ribbon-text { font-size: 6.8px; color: #fff; line-height: 1.4; letter-spacing: 0.2px; }
+  .rv2-ribbon-text b { color: #E8C97A; }
+
+  .rv2-title-block { text-align: center; padding: 16px 10px 4px; }
+  .rv2-title-block h1 { font-family:'Fraunces',serif; font-size: 18px; color:#0D1B2A; line-height:1.25; margin:0; }
+  .rv2-title-rule { display:flex; align-items:center; justify-content:center; gap:8px; margin:6px 0 0; }
+  .rv2-title-rule .rv2-line { height:1px; width:36px; background:#C9A84C; }
+  .rv2-title-rule .rv2-txt { font-size:9.5px; letter-spacing:1.5px; color:#9A7828; font-weight:700; }
+
+  .rv2-doc-title { text-align:center; margin: 12px 0 14px; }
+  .rv2-doc-title h2 { font-family:'Fraunces',serif; font-size:25px; font-weight:800; color:#0D1B2A; margin:0; }
+  .rv2-doc-sub { font-size:9.5px; letter-spacing:2px; color:#9A7828; font-weight:700; margin-top:4px; }
+
+  .rv2-infobar { display:flex; gap:10px; margin-bottom:14px; }
+  .rv2-info-item { flex:1; display:flex; border-radius:8px; overflow:hidden; border:1px solid #E3DBC9; }
+  .rv2-info-label { background:#0D1B2A; color:#fff; font-size:9px; font-weight:700; padding:9px 10px; display:flex; align-items:center; gap:5px; white-space:nowrap; }
+  .rv2-info-value { flex:1; padding:9px 10px; font-weight:700; font-size:11px; color:#0D1B2A; display:flex; align-items:center; font-family:'JetBrains Mono',monospace; }
+
+  .rv2-type-pill { color:#fff; text-align:center; padding:8px; border-radius:8px; font-weight:800; font-size:12px; letter-spacing:0.5px; margin-bottom:14px; }
+  .rv2-type-pill.in { background:#0D1B2A; }
+  .rv2-type-pill.out { background:#7A3229; }
+
+  .rv2-body { border:1.5px solid #C9A84C; border-radius:10px; padding:2px 16px; margin-bottom:14px; }
+  .rv2-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px dashed #E3DBC9; }
+  .rv2-row:last-child { border-bottom:none; }
+  .rv2-row-icon { width:21px; height:21px; border-radius:50%; background:#0D1B2A; color:#E8C97A; display:flex; align-items:center; justify-content:center; font-size:10.5px; flex-shrink:0; }
+  .rv2-row-label { font-size:10px; font-weight:800; color:#0D1B2A; letter-spacing:0.3px; min-width:125px; }
+  .rv2-row-value { flex:1; text-align:right; font-size:11px; font-weight:700; color:#1A1209; }
+
+  .rv2-amount-row { display:flex; gap:12px; margin-bottom:14px; align-items:stretch; }
+  .rv2-amount-box { flex:1.5; border-radius:12px; padding:15px; text-align:center; color:#fff; }
+  .rv2-amount-box.in { background:linear-gradient(135deg,#0D1B2A,#15293D); }
+  .rv2-amount-box.out { background:linear-gradient(135deg,#5C241C,#7A3229); }
+  .rv2-amount-label { font-size:9.5px; letter-spacing:2px; color:#E8C97A; font-weight:700; margin-bottom:6px; }
+  .rv2-amount-value { font-family:'Fraunces',serif; font-size:27px; font-weight:800; }
+  .rv2-amount-value .rv2-fcfa { font-size:14px; color:#E8C97A; }
+  .rv2-amount-lettres { font-size:9.5px; font-style:italic; color:#E8C97A; margin-top:8px; border-top:1px solid rgba(232,201,122,0.3); padding-top:6px; }
+  .rv2-verif-box { flex:1; border:1.5px solid #C9A84C; border-radius:12px; padding:10px; text-align:center; }
+  .rv2-verif-tag { background:#C9A84C; color:#0D1B2A; font-size:8px; font-weight:800; letter-spacing:1px; padding:3px 8px; border-radius:10px; display:inline-block; margin-bottom:6px; }
+  .rv2-verif-box .recu-qr-box { margin: 0 auto 6px; }
+  .rv2-verif-text { font-size:7.5px; color:#7A6F5C; line-height:1.3; margin-bottom:6px; }
+  .rv2-verif-ref { font-family:'JetBrains Mono',monospace; font-size:7.5px; color:#0D1B2A; word-break:break-all; }
+
+  .rv2-signrow { border:1.5px solid #C9A84C; border-radius:10px; display:flex; padding:14px 8px; margin-bottom:14px; }
+  .rv2-sign-col { flex:1; text-align:center; padding:0 6px; }
+  .rv2-sign-col + .rv2-sign-col { border-left:1px solid #E3DBC9; }
+  .rv2-sign-col .rs-label { font-size:10px; font-weight:800; color:#0D1B2A; margin-bottom:22px; line-height:1.5; }
+  .rv2-sign-col .rs-signature-img { display:block; max-height:38px; max-width:120px; margin:4px auto 0; object-fit:contain; }
+  .rv2-sign-col .rs-label:has(.rs-signature-img) { margin-bottom:4px; }
+  .rv2-sign-col .rs-nom { display:block; font-size:10.5px; font-weight:700; color:#8A6D1D; margin-top:2px; }
+  .rv2-sign-col .rs-line { border-top:1px solid #999; padding-top:5px; font-size:9px; color:#7A6F5C; }
+  .rv2-seal-col { flex:0 0 84px; display:flex; align-items:center; justify-content:center; }
+  .rv2-seal {
+    width:76px; height:76px; border-radius:50%; border:2px dashed #C9A84C;
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    text-align:center; font-size:6px; color:#9A7828; letter-spacing:0.2px; line-height:1.25;
+    font-weight:700; text-transform:uppercase; padding: 4px;
+  }
+  .rv2-seal b { font-family:'Fraunces',serif; font-size:12px; color:#0D1B2A; letter-spacing:0.5px; margin:2px 0; text-transform:none; }
+
+  .rv2-thanks { color:#fff; border-radius:10px; padding:10px 16px; text-align:center; font-size:10.5px; margin-bottom:14px; }
+  .rv2-thanks.in { background:#0D1B2A; }
+  .rv2-thanks.out { background:#7A3229; }
+  .rv2-thanks b { color:#E8C97A; }
+
+  .rv2-footerbar { background:#0D1B2A; color:#fff; border-radius:8px; padding:10px 14px; display:flex; flex-wrap:wrap; gap:6px 14px; font-size:8px; margin-bottom:8px; }
+  .rv2-footerbar div { flex:1; min-width:110px; }
+
+  .rv2-bottombar { display:flex; justify-content:space-between; align-items:center; font-size:8px; color:#7A6F5C; }
+  .rv2-original-badge { background:#E8C97A; color:#0D1B2A; font-weight:800; padding:3px 10px; border-radius:10px; font-size:8px; letter-spacing:0.5px; }
+
   .recap-section-title {
     font-family: 'Fraunces', serif;
     font-size: 15px;
@@ -960,9 +1054,10 @@
   .role-controleur { background: rgba(160,120,48,0.2); color: #D4A94C; border: 1px solid rgba(160,120,48,0.4); }
   .session-name { font-size: 13px; color: rgba(255,255,255,0.8); font-weight: 600; }
   .session-right { display: flex; align-items: center; gap: 12px; }
-  .sync-indicator { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: rgba(255,255,255,0.5); }
-  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #6FCF97; animation: pulse-dot 2s infinite; }
-  .sync-dot.offline { background: #EB8378; animation: none; }
+  .sync-indicator { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: rgba(255,255,255,0.5); cursor: default; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #6FCF97; opacity: 0.55; transition: opacity 0.2s; }
+  .sync-dot.offline { background: #EB8378; opacity: 0.85; }
+  .sync-dot.syncing { animation: pulse-dot 0.7s ease-in-out infinite; opacity: 1; }
   .btn-logout { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; background: rgba(184,74,62,0.15); color: #EB8378; border: 1px solid rgba(184,74,62,0.3); cursor: pointer; }
   .btn-update { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; background: #C9A84C; color: #1A2E22; border: 1px solid #E8C97A; cursor: pointer; animation: pulseMaj 1.8s ease-in-out infinite; }
   @keyframes pulseMaj { 0%,100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.55); } 50% { box-shadow: 0 0 0 6px rgba(201,168,76,0); } }
@@ -1440,9 +1535,8 @@
     <span style="font-size:11px;color:rgba(255,255,255,0.35)" id="sessionHeure"></span>
   </div>
   <div class="session-right">
-    <div class="sync-indicator">
-      <div class="sync-dot" id="syncDot"></div>
-      <span id="syncText">Synchronisation active</span>
+    <div class="sync-indicator" id="syncIndicator" title="Synchronisation active">
+      <span class="sync-dot" id="syncDot"></span>
     </div>
     <button class="btn-update" id="btnMajDisponible" style="display:none" onclick="appliquerMiseAJour()">🔄 Mettre à jour</button>
     <button class="btn-logout" onclick="seDeconnecter()">Se déconnecter</button>
@@ -2690,39 +2784,47 @@
     </div>
 
     <div class="card">
-      <div class="card-title">🔄 Mises à jour de l'application</div>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>🔄 Mises à jour de l'application</span><span class="lth-chevron">▾</span>
+      </div>
       <div class="card-subtitle">Vérifie s'il existe une nouvelle version du fichier en ligne et l'installe sur cet appareil, y compris pour un usage hors-ligne</div>
-      <div class="info-banner" id="majInfoBanner">💡 L'application vérifie automatiquement les mises à jour dès qu'une connexion internet est disponible. Vous pouvez aussi forcer une vérification manuelle ci-dessous.</div>
-      <button class="btn btn-ghost" onclick="verifierMiseAJour(true)">🔍 Vérifier maintenant</button>
-      <button class="btn btn-gold" id="btnAppliquerMajParametres" style="display:none;margin-left:8px" onclick="appliquerMiseAJour()">🔄 Mettre à jour maintenant</button>
-      <div id="majStatus" style="font-size:12px;color:var(--muted);margin-top:8px">Aucune vérification effectuée pour le moment.</div>
+      <div class="liste-corps-repliable">
+        <div class="info-banner" id="majInfoBanner">💡 L'application vérifie automatiquement les mises à jour dès qu'une connexion internet est disponible. Vous pouvez aussi forcer une vérification manuelle ci-dessous.</div>
+        <button class="btn btn-ghost" onclick="verifierMiseAJour(true)">🔍 Vérifier maintenant</button>
+        <button class="btn btn-gold" id="btnAppliquerMajParametres" style="display:none;margin-left:8px" onclick="appliquerMiseAJour()">🔄 Mettre à jour maintenant</button>
+        <div id="majStatus" style="font-size:12px;color:var(--muted);margin-top:8px">Aucune vérification effectuée pour le moment.</div>
+      </div>
     </div>
 
     <div class="card">
-      <div class="card-title">☁️ Sauvegarde sur Google Drive</div>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>☁️ Sauvegarde sur Google Drive</span><span class="lth-chevron">▾</span>
+      </div>
       <div class="card-subtitle">Envoyez une copie de sécurité de toutes les données MTD sur votre propre compte Google Drive</div>
-      <div class="info-banner">
-        💡 Cette fonctionnalité nécessite un identifiant Google (« Client ID OAuth ») propre à la MTD, à créer une seule fois gratuitement sur
-        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a> :
-        créez un projet → activez l'« API Google Drive » → créez un identifiant OAuth de type « Application Web » → ajoutez l'adresse de ce site
-        dans « Origines JavaScript autorisées » → collez le Client ID obtenu ci-dessous. Cette configuration ne se fait qu'une seule fois.
-      </div>
-      <div class="membre-form" style="grid-template-columns:1fr auto">
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">Client ID Google OAuth</label>
-          <input type="text" class="field-input" id="driveClientId" placeholder="Ex: 123456789-abc...apps.googleusercontent.com">
+      <div class="liste-corps-repliable">
+        <div class="info-banner">
+          💡 Cette fonctionnalité nécessite un identifiant Google (« Client ID OAuth ») propre à la MTD, à créer une seule fois gratuitement sur
+          <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a> :
+          créez un projet → activez l'« API Google Drive » → créez un identifiant OAuth de type « Application Web » → ajoutez l'adresse de ce site
+          dans « Origines JavaScript autorisées » → collez le Client ID obtenu ci-dessous. Cette configuration ne se fait qu'une seule fois.
         </div>
-        <div class="field-group" style="margin-bottom:0;display:flex;align-items:flex-end">
-          <button class="btn btn-ghost" style="height:38px" onclick="enregistrerDriveClientId()">💾 Enregistrer</button>
+        <div class="membre-form" style="grid-template-columns:1fr auto">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">Client ID Google OAuth</label>
+            <input type="text" class="field-input" id="driveClientId" placeholder="Ex: 123456789-abc...apps.googleusercontent.com">
+          </div>
+          <div class="field-group" style="margin-bottom:0;display:flex;align-items:flex-end">
+            <button class="btn btn-ghost" style="height:38px" onclick="enregistrerDriveClientId()">💾 Enregistrer</button>
+          </div>
         </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+          <button class="btn btn-gold" onclick="connecterGoogleDrive()">🔑 Se connecter à Google Drive</button>
+          <button class="btn btn-add-in" onclick="sauvegarderSurDrive()" id="btnSauvegarderDrive" disabled>☁️ Sauvegarder maintenant</button>
+          <button class="btn btn-header" onclick="listerSauvegardesDrive()" id="btnListerDrive" disabled>📂 Voir mes sauvegardes</button>
+        </div>
+        <div id="driveStatus" style="font-size:12px;color:var(--muted);margin-top:10px"></div>
+        <div id="driveFilesList" style="margin-top:12px"></div>
       </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
-        <button class="btn btn-gold" onclick="connecterGoogleDrive()">🔑 Se connecter à Google Drive</button>
-        <button class="btn btn-add-in" onclick="sauvegarderSurDrive()" id="btnSauvegarderDrive" disabled>☁️ Sauvegarder maintenant</button>
-        <button class="btn btn-header" onclick="listerSauvegardesDrive()" id="btnListerDrive" disabled>📂 Voir mes sauvegardes</button>
-      </div>
-      <div id="driveStatus" style="font-size:12px;color:var(--muted);margin-top:10px"></div>
-      <div id="driveFilesList" style="margin-top:12px"></div>
     </div>
 
     <div class="card">
@@ -2762,98 +2864,116 @@
     </div>
 
     <div class="card" id="paramAdminMdpCard" style="display:none">
-      <div class="card-title">👑 Réinitialiser le mot de passe d'un rôle</div>
-      <div class="card-subtitle">Réservé au Président — ne nécessite pas l'ancien mot de passe. La mise à jour est synchronisée sur tous les appareils.</div>
-      <div class="membre-form" style="grid-template-columns:repeat(3,1fr)">
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">Rôle concerné</label>
-          <select class="field-input" id="mdpRoleAdmin">
-            <option value="president">👑 Président</option>
-            <option value="tresorier">💰 Trésorier Général</option>
-            <option value="secretaire">📝 Secrétaire Général</option>
-            <option value="controleur">🔍 Contrôleur</option>
-          </select>
-        </div>
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">Nouveau mot de passe</label>
-          <div class="pwd-wrap">
-            <input type="password" class="field-input" id="mdpAdminNouveau" placeholder="6 caractères minimum">
-            <button type="button" class="pwd-toggle" tabindex="-1" onclick="toggleMdpVisibilite('mdpAdminNouveau', this)">👁️</button>
-          </div>
-        </div>
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">Confirmer</label>
-          <div class="pwd-wrap">
-            <input type="password" class="field-input" id="mdpAdminConfirme" placeholder="••••••••">
-            <button type="button" class="pwd-toggle" tabindex="-1" onclick="toggleMdpVisibilite('mdpAdminConfirme', this)">👁️</button>
-          </div>
-        </div>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>👑 Réinitialiser le mot de passe d'un rôle</span><span class="lth-chevron">▾</span>
       </div>
-      <button class="btn btn-gold" onclick="reinitialiserMotDePasseRole()">🔑 Réinitialiser ce mot de passe</button>
-      <div id="mdpAdminMessage" style="margin-top:12px"></div>
+      <div class="card-subtitle">Réservé au Président — ne nécessite pas l'ancien mot de passe. La mise à jour est synchronisée sur tous les appareils.</div>
+      <div class="liste-corps-repliable">
+        <div class="membre-form" style="grid-template-columns:repeat(3,1fr)">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">Rôle concerné</label>
+            <select class="field-input" id="mdpRoleAdmin">
+              <option value="president">👑 Président</option>
+              <option value="tresorier">💰 Trésorier Général</option>
+              <option value="secretaire">📝 Secrétaire Général</option>
+              <option value="controleur">🔍 Contrôleur</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">Nouveau mot de passe</label>
+            <div class="pwd-wrap">
+              <input type="password" class="field-input" id="mdpAdminNouveau" placeholder="6 caractères minimum">
+              <button type="button" class="pwd-toggle" tabindex="-1" onclick="toggleMdpVisibilite('mdpAdminNouveau', this)">👁️</button>
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">Confirmer</label>
+            <div class="pwd-wrap">
+              <input type="password" class="field-input" id="mdpAdminConfirme" placeholder="••••••••">
+              <button type="button" class="pwd-toggle" tabindex="-1" onclick="toggleMdpVisibilite('mdpAdminConfirme', this)">👁️</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-gold" onclick="reinitialiserMotDePasseRole()">🔑 Réinitialiser ce mot de passe</button>
+        <div id="mdpAdminMessage" style="margin-top:12px"></div>
+      </div>
     </div>
 
     <div class="card" id="paramRolesCard" style="display:none">
-      <div class="card-title">👑 Attribution des rôles & limites d'accès</div>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>👑 Attribution des rôles & limites d'accès</span><span class="lth-chevron">▾</span>
+      </div>
       <div class="card-subtitle">Réservé au Président — définit ce que chaque rôle est autorisé à faire dans l'outil</div>
-      <div id="paramRolesZone"></div>
-      <div style="font-size:11.5px;color:var(--muted);margin-top:10px">
-        💡 Le rôle Président conserve toujours le droit de gérer les mots de passe et les rôles, afin d'éviter un blocage accidentel de l'accès administrateur.
+      <div class="liste-corps-repliable">
+        <div id="paramRolesZone"></div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:10px">
+          💡 Le rôle Président conserve toujours le droit de gérer les mots de passe et les rôles, afin d'éviter un blocage accidentel de l'accès administrateur.
+        </div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">🏢 Informations de contact de la MTD</div>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>🏢 Informations de contact de la MTD</span><span class="lth-chevron">▾</span>
+      </div>
       <div class="card-subtitle">Utilisées dans le pied de page et sur les reçus imprimés</div>
-      <div class="membre-form" style="grid-template-columns:repeat(2,1fr)">
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">Téléphones</label>
-          <input type="text" class="field-input" id="paramTelephones" placeholder="Ex: 0585 208 642 / 0102 357 418">
+      <div class="liste-corps-repliable">
+        <div class="membre-form" style="grid-template-columns:repeat(2,1fr)">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">Téléphones</label>
+            <input type="text" class="field-input" id="paramTelephones" placeholder="Ex: 0585 208 642 / 0102 357 418">
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">WhatsApp</label>
+            <input type="text" class="field-input" id="paramWhatsapp" placeholder="Ex: 0747 651 992">
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">E-mail</label>
+            <input type="email" class="field-input" id="paramEmail" placeholder="Ex: mtd225@gmail.com">
+          </div>
+          <div class="field-group" style="margin-bottom:0;grid-column:1/-1">
+            <label class="field-label">Localisation</label>
+            <input type="text" class="field-input" id="paramLocalisation" placeholder="Ex: Toumodi, Côte d'Ivoire">
+          </div>
         </div>
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">WhatsApp</label>
-          <input type="text" class="field-input" id="paramWhatsapp" placeholder="Ex: 0747 651 992">
-        </div>
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">E-mail</label>
-          <input type="email" class="field-input" id="paramEmail" placeholder="Ex: mtd225@gmail.com">
-        </div>
-        <div class="field-group" style="margin-bottom:0;grid-column:1/-1">
-          <label class="field-label">Localisation</label>
-          <input type="text" class="field-input" id="paramLocalisation" placeholder="Ex: Toumodi, Côte d'Ivoire">
-        </div>
+        <button class="btn btn-gold" onclick="enregistrerParametresContact()">💾 Enregistrer ces informations</button>
       </div>
-      <button class="btn btn-gold" onclick="enregistrerParametresContact()">💾 Enregistrer ces informations</button>
     </div>
 
     <div class="card">
-      <div class="card-title">✍️ Signataires officiels des reçus</div>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>✍️ Signataires officiels des reçus</span><span class="lth-chevron">▾</span>
+      </div>
       <div class="card-subtitle">Renseignez le nom des membres du CA en poste : il apparaîtra automatiquement sous « Nom & Signature » sur tous les reçus, fiches et documents imprimés — réservé au Président</div>
-      <div class="membre-form" style="grid-template-columns:repeat(4,1fr)">
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">👑 Président du C.A.</label>
-          <input type="text" class="field-input" id="paramSignPresident" placeholder="Ex: Kouassi Jean">
+      <div class="liste-corps-repliable">
+        <div class="membre-form" style="grid-template-columns:repeat(4,1fr)">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">👑 Président du C.A.</label>
+            <input type="text" class="field-input" id="paramSignPresident" placeholder="Ex: Kouassi Jean">
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">💰 Trésorier Général</label>
+            <input type="text" class="field-input" id="paramSignTresorier" placeholder="Ex: Konan Marie">
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">📝 Secrétaire Général</label>
+            <input type="text" class="field-input" id="paramSignSecretaire" placeholder="Ex: Yao Paul">
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">🔍 Comité de Contrôle</label>
+            <input type="text" class="field-input" id="paramSignControleur" placeholder="Ex: Aka Solange">
+          </div>
         </div>
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">💰 Trésorier Général</label>
-          <input type="text" class="field-input" id="paramSignTresorier" placeholder="Ex: Konan Marie">
-        </div>
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">📝 Secrétaire Général</label>
-          <input type="text" class="field-input" id="paramSignSecretaire" placeholder="Ex: Yao Paul">
-        </div>
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">🔍 Comité de Contrôle</label>
-          <input type="text" class="field-input" id="paramSignControleur" placeholder="Ex: Aka Solange">
-        </div>
+        <button class="btn btn-gold" onclick="enregistrerParametresSignataires()">💾 Enregistrer les signataires</button>
       </div>
-      <button class="btn btn-gold" onclick="enregistrerParametresSignataires()">💾 Enregistrer les signataires</button>
     </div>
 
     <div class="card">
-      <div class="card-title">🖋️ Signatures manuscrites (photo)</div>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>🖋️ Signatures manuscrites (photo)</span><span class="lth-chevron">▾</span>
+      </div>
       <div class="card-subtitle">Signez sur une feuille blanche, prenez-la en photo (ou scannez-la), choisissez le rôle concerné, puis importez. Elle s'insérera automatiquement sur tous les reçus et documents imprimés à la place de l'espace vierge — réservé au Président.</div>
-
+      <div class="liste-corps-repliable">
       <div class="membre-form" style="grid-template-columns:1fr 1.4fr;align-items:end">
         <div class="field-group" style="margin-bottom:0">
           <label class="field-label">Rôle à qui attribuer la photo</label>
@@ -2897,12 +3017,15 @@
         </div>`;
         }).join('')}
       </div>
+      </div>
     </div>
 
     <div class="card">
-      <div class="card-title">🚨 Seuils d'alerte intelligents</div>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>🚨 Seuils d'alerte intelligents</span><span class="lth-chevron">▾</span>
+      </div>
       <div class="card-subtitle">Le logiciel vous prévient automatiquement — retards de cotisation, caisse faible, dépassement de plafond, réunion proche, reçu non imprimé</div>
-
+      <div class="liste-corps-repliable">
       <div class="membre-form" style="grid-template-columns:1fr auto;margin-bottom:18px">
         <div class="field-group" style="margin-bottom:0">
           <label class="field-label">Seuil d'alerte — fonds de caisse faible (FCFA)</label>
@@ -2925,10 +3048,14 @@
 
       <div class="card-subtitle" style="margin-top:0">Plafonds par prestation (cahier des charges) — alerte si une sortie dépasse le montant fixé</div>
       <div id="plafondsZone"></div>
+      </div>
     </div>
 
     <div class="card">
-      <div class="card-title">🔔 Préférences d'affichage</div>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>🔔 Préférences d'affichage</span><span class="lth-chevron">▾</span>
+      </div>
+      <div class="liste-corps-repliable">
       <div class="settings-row">
         <div>
           <b style="font-size:13.5px">Notifications toast (activité des autres membres du CA)</b>
@@ -2946,12 +3073,15 @@
         <button class="btn btn-gold btn-small" onclick="demanderPermissionNotifications()">🔔 Activer</button>
       </div>
       <div id="notifPermStatus" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
+      </div>
     </div>
 
     <div class="card" id="paramDangerCard" style="display:none;border-color:#E3C9C9">
-      <div class="card-title">🛑 Zone dangereuse</div>
+      <div class="card-title liste-toggle-header" onclick="toggleListeRepliable(this)">
+        <span>🛑 Zone dangereuse</span><span class="lth-chevron">▾</span>
+      </div>
       <div class="card-subtitle">Réservé au Président — ces actions sont irréversibles et nécessitent votre mot de passe</div>
-
+      <div class="liste-corps-repliable">
       <div class="section-divider"><span>Réinitialiser les soldes</span></div>
       <div class="info-banner">
         💡 Le Solde de trésorerie et le Fonds de réserve sont calculés à partir des entrées et sorties enregistrées. Pour les remettre à 0 sans perdre l'historique, cette action archive automatiquement toutes les entrées/sorties actuelles (comme un rapport mensuel), puis vide la caisse pour repartir à zéro.
@@ -2964,6 +3094,7 @@
         Supprime définitivement toutes les entrées, sorties, archives, membres, demandes, réunions et la corbeille. Téléchargez une sauvegarde avant de continuer (onglet Rapports → Sécurité des données).
       </p>
       <button class="btn" style="background:var(--red-light); color:var(--red); border:1.5px solid var(--red)" onclick="reinitialiserToutesLesDonnees()">🗑️ Réinitialiser toutes les données</button>
+      </div>
     </div>
   </div>
 
@@ -3875,6 +4006,7 @@ function initialiserFirebase() {
   ref.on('value', snapshot => {
     const data = snapshot.val();
     if (!data) return;
+    signalerSyncEnCours();
 
     entrees   = normaliserCollection(data.entrees);
     sorties   = normaliserCollection(data.sorties);
@@ -3951,12 +4083,14 @@ function initialiserFirebase() {
 // Écrit UN SEUL enregistrement à son propre chemin (n'affecte aucun autre enregistrement)
 function fbUpsert(collection, item) {
   if (!firebaseOK || !db || !item || item.id === undefined) return;
+  signalerSyncEnCours();
   db.ref('mtd_dorado/' + collection + '/' + item.id).set(item).catch(() => setSyncStatus(false));
 }
 
 // Supprime UN SEUL enregistrement
 function fbRemove(collection, id) {
   if (!firebaseOK || !db || id === undefined) return;
+  signalerSyncEnCours();
   db.ref('mtd_dorado/' + collection + '/' + id).remove().catch(() => setSyncStatus(false));
 }
 
@@ -3964,6 +4098,7 @@ function fbRemove(collection, id) {
 // utilisateur (import, réinitialisation) où l'écrasement complet est voulu.
 function fbBulkReplace(collection, items) {
   if (!firebaseOK || !db) return;
+  signalerSyncEnCours();
   const map = {};
   (items || []).forEach(it => { if (it && it.id !== undefined) map[it.id] = it; });
   db.ref('mtd_dorado/' + collection).set(map).catch(() => setSyncStatus(false));
@@ -3973,6 +4108,7 @@ function fbBulkReplace(collection, items) {
 // d'éviter les collisions de numéros lorsque deux personnes ajoutent en même temps.
 function fbSyncCompteurs() {
   if (!firebaseOK || !db) return;
+  signalerSyncEnCours();
   // Transaction atomique : ne fait jamais reculer un compteur déjà plus avancé
   // côté serveur (ex. un autre appareil a créé un membre entre-temps). Chaque
   // sous-compteur est traité indépendamment pour éviter qu'un seul en retard
@@ -4015,15 +4151,28 @@ function journaliser(type, message) {
 
 function setSyncStatus(online) {
   const dot = document.getElementById('syncDot');
-  const txt = document.getElementById('syncText');
-  if (!dot || !txt) return;
+  const indicateur = document.getElementById('syncIndicator');
+  if (!dot || !indicateur) return;
   if (online) {
-    dot.className = 'sync-dot';
-    txt.textContent = 'Synchronisation active';
+    dot.classList.remove('offline');
+    indicateur.title = 'Synchronisation active';
   } else {
-    dot.className = 'sync-dot offline';
-    txt.textContent = 'Mode hors ligne';
+    dot.classList.add('offline');
+    indicateur.title = 'Mode hors ligne — les modifications seront synchronisées à la reconnexion';
   }
+}
+
+// Anime brièvement l'icône de synchronisation pour signaler une écriture Firebase
+// en cours, sans texte permanent qui alourdit la barre de session. Un minimum de
+// durée est imposé pour que l'animation reste perceptible même sur une écriture
+// très rapide.
+let syncAnimationTimeout = null;
+function signalerSyncEnCours() {
+  const dot = document.getElementById('syncDot');
+  if (!dot) return;
+  dot.classList.add('syncing');
+  clearTimeout(syncAnimationTimeout);
+  syncAnimationTimeout = setTimeout(() => dot.classList.remove('syncing'), 700);
 }
 
 function renderJournal(items) {
@@ -5652,71 +5801,109 @@ function genererHtmlRecu(sens, id) {
   const moyenPaiement = op.moyenPaiement || 'Espèces';
   const contact = getParametresContact();
 
+  const legendeQR = membreLie
+    ? `Scannez pour vérifier les informations du membre associé à ce reçu.`
+    : `⚠️ Aucun membre identifié pour "${escapeHtml(nomPersonne)}" — le QR ne contient que la référence du document.`;
+
   const html = `
     <div class="recu-doc">
-      <div class="recu-frame">
-        <div class="recu-watermark">MTD</div>
+      <div class="recu-frame rv2-frame">
         <div class="recu-content">
-          <div class="recu-header">
-            <div class="rh-brand">
-              <div class="rh-mark">MTD</div>
-              <div>
-                <h2>Mutuelle des Travailleurs de Dorado</h2>
-                <p>${contact.localisation}</p>
-              </div>
+
+          <div class="rv2-header">
+            <div class="rv2-logo-block">
+              <div class="rv2-logo-mark">MTD</div>
+              <div class="rv2-logo-caption">Mutuelle des Travailleurs de Dorado</div>
             </div>
-            <div class="rh-num">
-              N° ${numero}<br>
-              ${formatDate(op.date)}
+            <div class="rv2-ribbon">
+              <div class="rv2-ribbon-icon">🤝</div>
+              <div class="rv2-ribbon-text">LA FORCE DE LA <b>SOLIDARITÉ</b>,<br>NOTRE AVENIR COMMUN</div>
             </div>
           </div>
 
-          <div class="recu-title">${titre}</div>
-          <div class="recu-subtitle">${sousTitre}</div>
-          <div class="recu-type-badge ${sens}">${isIn ? '✓ ENTRÉE DE FONDS' : '✓ SORTIE DE FONDS'}</div>
+          <div class="rv2-title-block">
+            <h1>MUTUELLE DES TRAVAILLEURS DE DORADO</h1>
+            <div class="rv2-title-rule">
+              <span class="rv2-line"></span>
+              <span class="rv2-txt">${contact.localisation.toUpperCase()}</span>
+              <span class="rv2-line"></span>
+            </div>
+          </div>
 
-          <div class="recu-body">
-            <div class="recu-row"><span class="rk">${labelPersonne}</span><span class="rv">${escapeHtml(nomPersonne)}</span></div>
-            <div class="recu-row"><span class="rk">${labelFonction}</span><span class="rv">${valeurFonction}</span></div>
-            <div class="recu-row"><span class="rk">Catégorie</span><span class="rv">${op.type}</span></div>
+          <div class="rv2-doc-title">
+            <h2>${titre}</h2>
+            <div class="rv2-doc-sub">${sousTitre.toUpperCase()}</div>
+          </div>
+
+          <div class="rv2-infobar">
+            <div class="rv2-info-item">
+              <span class="rv2-info-label">📄 N° REÇU</span>
+              <span class="rv2-info-value">${numero}</span>
+            </div>
+            <div class="rv2-info-item">
+              <span class="rv2-info-label">📅 DATE</span>
+              <span class="rv2-info-value">${formatDate(op.date)}</span>
+            </div>
+          </div>
+
+          <div class="rv2-type-pill ${sens}">💲 ${isIn ? 'ENTRÉE DE FONDS' : 'SORTIE DE FONDS'}</div>
+
+          <div class="rv2-body">
+            <div class="rv2-row"><div class="rv2-row-icon">👤</div><div class="rv2-row-label">${labelPersonne.toUpperCase()}</div><div class="rv2-row-value">${escapeHtml(nomPersonne)}</div></div>
+            <div class="rv2-row"><div class="rv2-row-icon">💼</div><div class="rv2-row-label">${labelFonction.toUpperCase()}</div><div class="rv2-row-value">${valeurFonction}</div></div>
+            <div class="rv2-row"><div class="rv2-row-icon">🏷️</div><div class="rv2-row-label">CATÉGORIE</div><div class="rv2-row-value">${op.type}</div></div>
             ${!isIn && op.type === 'Médical' && op.fraisReels ? `
-            <div class="recu-row"><span class="rk">Frais médicaux réels</span><span class="rv">${fmt(op.fraisReels)}</span></div>
-            <div class="recu-row"><span class="rk">Taux de prise en charge MTD</span><span class="rv">${op.tauxPriseEnCharge ?? 0}%</span></div>
+            <div class="rv2-row"><div class="rv2-row-icon">🏥</div><div class="rv2-row-label">FRAIS RÉELS</div><div class="rv2-row-value">${fmt(op.fraisReels)}</div></div>
+            <div class="rv2-row"><div class="rv2-row-icon">📊</div><div class="rv2-row-label">TAUX MTD</div><div class="rv2-row-value">${op.tauxPriseEnCharge ?? 0}%</div></div>
             ` : ''}
-            <div class="recu-row"><span class="rk">Moyen de paiement</span><span class="rv recu-moyen-paiement">${logoPaiementHTML(moyenPaiement) ? `<span class="recu-logo-paiement">${logoPaiementHTML(moyenPaiement)}</span>` : (payIcon[moyenPaiement]||'') + ' ' + moyenPaiement}${op.telephonePaiement ? ' <span class="recu-tel-paiement">— ' + op.telephonePaiement + '</span>' : ''}</span></div>
-            <div class="recu-row"><span class="rk">Date de l'opération</span><span class="rv">${formatDate(op.date)}</span></div>
-            <div class="recu-row"><span class="rk">Numéro de pièce</span><span class="rv">${numero}</span></div>
+            <div class="rv2-row"><div class="rv2-row-icon">💳</div><div class="rv2-row-label">MOYEN DE PAIEMENT</div><div class="rv2-row-value recu-moyen-paiement" style="justify-content:flex-end">${logoPaiementHTML(moyenPaiement) ? `<span class="recu-logo-paiement">${logoPaiementHTML(moyenPaiement)}</span>` : (payIcon[moyenPaiement]||'') + ' ' + moyenPaiement}${op.telephonePaiement ? ' <span class="recu-tel-paiement">— ' + op.telephonePaiement + '</span>' : ''}</div></div>
+            <div class="rv2-row"><div class="rv2-row-icon">📅</div><div class="rv2-row-label">DATE DE L'OPÉRATION</div><div class="rv2-row-value">${formatDate(op.date)}</div></div>
+            <div class="rv2-row"><div class="rv2-row-icon">📄</div><div class="rv2-row-label">NUMÉRO DE PIÈCE</div><div class="rv2-row-value">${numero}</div></div>
           </div>
 
-          <div class="recu-amount-box">
-            <div class="ral">Montant ${isIn ? 'versé' : 'décaissé'}</div>
-            <div class="rav">${fmt(op.montant)}</div>
+          <div class="rv2-amount-row">
+            <div class="rv2-amount-box ${sens}">
+              <div class="rv2-amount-label">MONTANT ${isIn ? 'VERSÉ' : 'DÉCAISSÉ'}</div>
+              <div class="rv2-amount-value">${fmt(op.montant).replace(' FCFA','')} <span class="rv2-fcfa">FCFA</span></div>
+              <div class="rv2-amount-lettres">Arrêté à la somme de : ${nombreEnLettres(op.montant)} francs CFA</div>
+            </div>
+            <div class="rv2-verif-box">
+              <div class="rv2-verif-tag">VÉRIFICATION</div>
+              <div class="recu-qr-box" id="recuQRCode"></div>
+              <div class="rv2-verif-text">${legendeQR}</div>
+              <div class="rv2-verif-ref">RÉF. ${numero}</div>
+            </div>
           </div>
-          <div class="recu-montant-lettres">Arrêté la présente pièce à la somme de : <b>${nombreEnLettres(op.montant)} francs CFA</b></div>
 
-          <div class="recu-signatures">
-            <div class="recu-sig">
+          <div class="rv2-signrow">
+            <div class="rv2-sign-col">
               <div class="rs-label">${sig1}</div>
               <div class="rs-line">Nom & Signature</div>
             </div>
-            <div class="recu-cachet">Cachet<br>officiel<br>MTD</div>
-            <div class="recu-sig">
+            <div class="rv2-seal-col">
+              <div class="rv2-seal">Mutuelle des Travailleurs de Dorado<b>MTD</b>Toumodi · Côte d'Ivoire</div>
+            </div>
+            <div class="rv2-sign-col">
               <div class="rs-label">${sig2}</div>
               <div class="rs-line">Nom & Signature</div>
             </div>
           </div>
 
-          <div class="recu-merci">${getMotRemerciement(sens, op.type)}</div>
+          <div class="rv2-thanks ${sens}">🛡️ ${getMotRemerciement(sens, op.type)}</div>
 
-          <div class="recu-footer">
-            MTD — Mutuelle des Travailleurs de Dorado · ${contact.localisation}<br>
-            ${contact.telephones} · WhatsApp ${contact.whatsapp} · ${contact.email}<br>
-            Document généré le ${formatDate(todayStr())} — Document à conserver
-            <div class="rf-ref">RÉF. ${numero}</div>
+          <div class="rv2-footerbar">
+            <div>📍 ${contact.localisation}</div>
+            <div>📞 ${contact.telephones}</div>
+            <div>✉️ ${contact.email}</div>
+            <div>💬 WhatsApp ${contact.whatsapp}</div>
           </div>
-          ${blocQRHtml('recuQRCode', membreLie
-            ? `Scannez pour vérifier les informations du membre associé à ce reçu (réf. ${numero}).`
-            : `⚠️ Aucun membre identifié pour "${escapeHtml(nomPersonne)}" — le QR ne contient que la référence du document. Vérifiez l'orthographe ou sélectionnez le nom dans la liste proposée.`)}
+
+          <div class="rv2-bottombar">
+            <span>🔒 DOCUMENT SÉCURISÉ</span>
+            <span>Document généré le ${formatDate(todayStr())} · Document à conserver</span>
+            <span class="rv2-original-badge">ORIGINAL</span>
+          </div>
+
         </div>
       </div>
     </div>
