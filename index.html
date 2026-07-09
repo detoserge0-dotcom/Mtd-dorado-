@@ -834,8 +834,8 @@
     text-align: center;
   }
   .recu-sig .rs-label { font-size: 11px; font-weight: 700; color: #0D1B2A; margin-bottom: 26px; line-height: 1.5; }
-  .recu-sig .rs-signature-img { display: block; max-height: 40px; max-width: 130px; margin: 4px auto 0; object-fit: contain; }
-  .recu-sig .rs-label:has(.rs-signature-img) { margin-bottom: 4px; }
+  .recu-sig .rs-signature-img { display: block; max-height: 68px; max-width: 175px; margin: 4px auto 0; object-fit: contain; }
+  .recu-sig .rs-label:has(.rs-signature-img) { margin-bottom: 6px; }
   .recu-sig .rs-nom { display: block; font-size: 11.5px; font-weight: 700; color: #8A6D1D; margin-top: 2px; }
   .recu-sig .rs-line { border-top: 1px solid #999; padding-top: 6px; font-size: 10px; color: #7A6F5C; }
   .recu-cachet {
@@ -1711,7 +1711,10 @@
     </div>
 
     <!-- LIGNE 1bis : KPIs du mois en cours -->
-    <div class="db-section-label" id="dbMoisLabel">Indicateurs du mois</div>
+    <div class="card-title liste-toggle-header" style="margin-top:6px" onclick="toggleListeRepliable(this)">
+      <span id="dbMoisLabel">📊 Indicateurs du mois</span><span class="lth-chevron">▾</span>
+    </div>
+    <div class="liste-corps-repliable">
     <div class="db-kpi-row">
       <div class="db-kpi-card db-kpi-recettes">
         <div class="db-kpi-icon">📈</div>
@@ -1762,10 +1765,15 @@
         </div>
       </div>
     </div>
+    </div>
 
     <!-- ALERTES -->
     <div id="dbAlertes"></div>
 
+    <div class="card-title liste-toggle-header" style="margin-top:16px" onclick="toggleListeRepliable(this)">
+      <span>📈 Graphiques — trésorerie & répartition</span><span class="lth-chevron">▾</span>
+    </div>
+    <div class="liste-corps-repliable">
     <!-- LIGNE 2 : Graphique trésorerie + Répartition -->
     <div class="db-row-2">
       <div class="card" style="flex:2">
@@ -1783,7 +1791,12 @@
         <canvas id="dbChartRep" height="180"></canvas>
       </div>
     </div>
+    </div>
 
+    <div class="card-title liste-toggle-header" style="margin-top:16px" onclick="toggleListeRepliable(this)">
+      <span>🏦 Fonds de réserve</span><span class="lth-chevron">▾</span>
+    </div>
+    <div class="liste-corps-repliable">
     <!-- LIGNE 2bis : Fonds de réserve -->
     <div class="db-row-2">
       <div class="card" style="flex:2">
@@ -1807,8 +1820,10 @@
         </div>
       </div>
     </div>
+    </div>
 
-    <!-- LIGNE 3 : Dernières ops + Membres en retard -->
+    <!-- LIGNE 3 : Dernières ops + Membres en retard (toujours visible — activité fréquemment consultée) -->
+    <div class="db-section-label" style="margin-top:16px">🕐 Activité récente</div>
     <div class="db-row-2">
       <div class="card" style="flex:1.2">
         <div class="db-card-header">
@@ -1835,6 +1850,10 @@
       </div>
     </div>
 
+    <div class="card-title liste-toggle-header" style="margin-top:16px" onclick="toggleListeRepliable(this)">
+      <span>📅 Budget & prochaines réunions</span><span class="lth-chevron">▾</span>
+    </div>
+    <div class="liste-corps-repliable">
     <!-- LIGNE 4 : Budget + Prochaine réunion -->
     <div class="db-row-2">
       <div class="card" style="flex:1.2">
@@ -1850,6 +1869,7 @@
           <button class="btn btn-gold" style="width:100%;font-size:13px" onclick="document.querySelector('.tab[data-tab=\'reunions\']').click()">+ Planifier une réunion</button>
         </div>
       </div>
+    </div>
     </div>
 
   </div>
@@ -5801,109 +5821,71 @@ function genererHtmlRecu(sens, id) {
   const moyenPaiement = op.moyenPaiement || 'Espèces';
   const contact = getParametresContact();
 
-  const legendeQR = membreLie
-    ? `Scannez pour vérifier les informations du membre associé à ce reçu.`
-    : `⚠️ Aucun membre identifié pour "${escapeHtml(nomPersonne)}" — le QR ne contient que la référence du document.`;
-
   const html = `
     <div class="recu-doc">
-      <div class="recu-frame rv2-frame">
+      <div class="recu-frame">
+        <div class="recu-watermark">MTD</div>
         <div class="recu-content">
-
-          <div class="rv2-header">
-            <div class="rv2-logo-block">
-              <div class="rv2-logo-mark">MTD</div>
-              <div class="rv2-logo-caption">Mutuelle des Travailleurs de Dorado</div>
+          <div class="recu-header">
+            <div class="rh-brand">
+              <div class="rh-mark">MTD</div>
+              <div>
+                <h2>Mutuelle des Travailleurs de Dorado</h2>
+                <p>${contact.localisation}</p>
+              </div>
             </div>
-            <div class="rv2-ribbon">
-              <div class="rv2-ribbon-icon">🤝</div>
-              <div class="rv2-ribbon-text">LA FORCE DE LA <b>SOLIDARITÉ</b>,<br>NOTRE AVENIR COMMUN</div>
-            </div>
-          </div>
-
-          <div class="rv2-title-block">
-            <h1>MUTUELLE DES TRAVAILLEURS DE DORADO</h1>
-            <div class="rv2-title-rule">
-              <span class="rv2-line"></span>
-              <span class="rv2-txt">${contact.localisation.toUpperCase()}</span>
-              <span class="rv2-line"></span>
+            <div class="rh-num">
+              N° ${numero}<br>
+              ${formatDate(op.date)}
             </div>
           </div>
 
-          <div class="rv2-doc-title">
-            <h2>${titre}</h2>
-            <div class="rv2-doc-sub">${sousTitre.toUpperCase()}</div>
-          </div>
+          <div class="recu-title">${titre}</div>
+          <div class="recu-subtitle">${sousTitre}</div>
+          <div class="recu-type-badge ${sens}">${isIn ? '✓ ENTRÉE DE FONDS' : '✓ SORTIE DE FONDS'}</div>
 
-          <div class="rv2-infobar">
-            <div class="rv2-info-item">
-              <span class="rv2-info-label">📄 N° REÇU</span>
-              <span class="rv2-info-value">${numero}</span>
-            </div>
-            <div class="rv2-info-item">
-              <span class="rv2-info-label">📅 DATE</span>
-              <span class="rv2-info-value">${formatDate(op.date)}</span>
-            </div>
-          </div>
-
-          <div class="rv2-type-pill ${sens}">💲 ${isIn ? 'ENTRÉE DE FONDS' : 'SORTIE DE FONDS'}</div>
-
-          <div class="rv2-body">
-            <div class="rv2-row"><div class="rv2-row-icon">👤</div><div class="rv2-row-label">${labelPersonne.toUpperCase()}</div><div class="rv2-row-value">${escapeHtml(nomPersonne)}</div></div>
-            <div class="rv2-row"><div class="rv2-row-icon">💼</div><div class="rv2-row-label">${labelFonction.toUpperCase()}</div><div class="rv2-row-value">${valeurFonction}</div></div>
-            <div class="rv2-row"><div class="rv2-row-icon">🏷️</div><div class="rv2-row-label">CATÉGORIE</div><div class="rv2-row-value">${op.type}</div></div>
+          <div class="recu-body">
+            <div class="recu-row"><span class="rk">${labelPersonne}</span><span class="rv">${escapeHtml(nomPersonne)}</span></div>
+            <div class="recu-row"><span class="rk">${labelFonction}</span><span class="rv">${valeurFonction}</span></div>
+            <div class="recu-row"><span class="rk">Catégorie</span><span class="rv">${op.type}</span></div>
             ${!isIn && op.type === 'Médical' && op.fraisReels ? `
-            <div class="rv2-row"><div class="rv2-row-icon">🏥</div><div class="rv2-row-label">FRAIS RÉELS</div><div class="rv2-row-value">${fmt(op.fraisReels)}</div></div>
-            <div class="rv2-row"><div class="rv2-row-icon">📊</div><div class="rv2-row-label">TAUX MTD</div><div class="rv2-row-value">${op.tauxPriseEnCharge ?? 0}%</div></div>
+            <div class="recu-row"><span class="rk">Frais médicaux réels</span><span class="rv">${fmt(op.fraisReels)}</span></div>
+            <div class="recu-row"><span class="rk">Taux de prise en charge MTD</span><span class="rv">${op.tauxPriseEnCharge ?? 0}%</span></div>
             ` : ''}
-            <div class="rv2-row"><div class="rv2-row-icon">💳</div><div class="rv2-row-label">MOYEN DE PAIEMENT</div><div class="rv2-row-value recu-moyen-paiement" style="justify-content:flex-end">${logoPaiementHTML(moyenPaiement) ? `<span class="recu-logo-paiement">${logoPaiementHTML(moyenPaiement)}</span>` : (payIcon[moyenPaiement]||'') + ' ' + moyenPaiement}${op.telephonePaiement ? ' <span class="recu-tel-paiement">— ' + op.telephonePaiement + '</span>' : ''}</div></div>
-            <div class="rv2-row"><div class="rv2-row-icon">📅</div><div class="rv2-row-label">DATE DE L'OPÉRATION</div><div class="rv2-row-value">${formatDate(op.date)}</div></div>
-            <div class="rv2-row"><div class="rv2-row-icon">📄</div><div class="rv2-row-label">NUMÉRO DE PIÈCE</div><div class="rv2-row-value">${numero}</div></div>
+            <div class="recu-row"><span class="rk">Moyen de paiement</span><span class="rv recu-moyen-paiement">${logoPaiementHTML(moyenPaiement) ? `<span class="recu-logo-paiement">${logoPaiementHTML(moyenPaiement)}</span>` : (payIcon[moyenPaiement]||'') + ' ' + moyenPaiement}${op.telephonePaiement ? ' <span class="recu-tel-paiement">— ' + op.telephonePaiement + '</span>' : ''}</span></div>
+            <div class="recu-row"><span class="rk">Date de l'opération</span><span class="rv">${formatDate(op.date)}</span></div>
+            <div class="recu-row"><span class="rk">Numéro de pièce</span><span class="rv">${numero}</span></div>
           </div>
 
-          <div class="rv2-amount-row">
-            <div class="rv2-amount-box ${sens}">
-              <div class="rv2-amount-label">MONTANT ${isIn ? 'VERSÉ' : 'DÉCAISSÉ'}</div>
-              <div class="rv2-amount-value">${fmt(op.montant).replace(' FCFA','')} <span class="rv2-fcfa">FCFA</span></div>
-              <div class="rv2-amount-lettres">Arrêté à la somme de : ${nombreEnLettres(op.montant)} francs CFA</div>
-            </div>
-            <div class="rv2-verif-box">
-              <div class="rv2-verif-tag">VÉRIFICATION</div>
-              <div class="recu-qr-box" id="recuQRCode"></div>
-              <div class="rv2-verif-text">${legendeQR}</div>
-              <div class="rv2-verif-ref">RÉF. ${numero}</div>
-            </div>
+          <div class="recu-amount-box">
+            <div class="ral">Montant ${isIn ? 'versé' : 'décaissé'}</div>
+            <div class="rav">${fmt(op.montant)}</div>
           </div>
+          <div class="recu-montant-lettres">Arrêté la présente pièce à la somme de : <b>${nombreEnLettres(op.montant)} francs CFA</b></div>
 
-          <div class="rv2-signrow">
-            <div class="rv2-sign-col">
+          <div class="recu-signatures">
+            <div class="recu-sig">
               <div class="rs-label">${sig1}</div>
               <div class="rs-line">Nom & Signature</div>
             </div>
-            <div class="rv2-seal-col">
-              <div class="rv2-seal">Mutuelle des Travailleurs de Dorado<b>MTD</b>Toumodi · Côte d'Ivoire</div>
-            </div>
-            <div class="rv2-sign-col">
+            <div class="recu-cachet">Cachet<br>officiel<br>MTD</div>
+            <div class="recu-sig">
               <div class="rs-label">${sig2}</div>
               <div class="rs-line">Nom & Signature</div>
             </div>
           </div>
 
-          <div class="rv2-thanks ${sens}">🛡️ ${getMotRemerciement(sens, op.type)}</div>
+          <div class="recu-merci">${getMotRemerciement(sens, op.type)}</div>
 
-          <div class="rv2-footerbar">
-            <div>📍 ${contact.localisation}</div>
-            <div>📞 ${contact.telephones}</div>
-            <div>✉️ ${contact.email}</div>
-            <div>💬 WhatsApp ${contact.whatsapp}</div>
+          <div class="recu-footer">
+            MTD — Mutuelle des Travailleurs de Dorado · ${contact.localisation}<br>
+            ${contact.telephones} · WhatsApp ${contact.whatsapp} · ${contact.email}<br>
+            Document généré le ${formatDate(todayStr())} — Document à conserver
+            <div class="rf-ref">RÉF. ${numero}</div>
           </div>
-
-          <div class="rv2-bottombar">
-            <span>🔒 DOCUMENT SÉCURISÉ</span>
-            <span>Document généré le ${formatDate(todayStr())} · Document à conserver</span>
-            <span class="rv2-original-badge">ORIGINAL</span>
-          </div>
-
+          ${blocQRHtml('recuQRCode', membreLie
+            ? `Scannez pour vérifier les informations du membre associé à ce reçu (réf. ${numero}).`
+            : `⚠️ Aucun membre identifié pour "${escapeHtml(nomPersonne)}" — le QR ne contient que la référence du document. Vérifiez l'orthographe ou sélectionnez le nom dans la liste proposée.`)}
         </div>
       </div>
     </div>
