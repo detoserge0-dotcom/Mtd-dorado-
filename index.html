@@ -799,6 +799,10 @@
     border-bottom: 1px solid #E3DBC9;
     font-size: 12.5px;
   }
+  /* Lignes secondaires (ex. détail médical) : plus compactes pour que les
+     reçus avec 2 lignes en plus (Frais réels + Taux de prise en charge)
+     tiennent toujours sur une seule page. */
+  .recu-row-compact { padding: 5px 20px; font-size: 11.5px; }
   .recu-row:last-child { border-bottom: none; }
   .recu-row:nth-child(even) { background: #FAF6EF; }
   .recu-row .rk { color: #7A6F5C; font-weight: 600; }
@@ -825,7 +829,7 @@
   .recu-signatures {
     display: flex;
     justify-content: space-between;
-    margin-top: 20px;
+    margin-top: 17px;
     gap: 20px;
     align-items: flex-end;
   }
@@ -847,8 +851,8 @@
   }
   .recu-footer {
     text-align: center;
-    margin-top: 17px;
-    padding-top: 11px;
+    margin-top: 14px;
+    padding-top: 9px;
     border-top: 1px solid #E3DBC9;
     font-size: 10px;
     color: #7A6F5C;
@@ -856,7 +860,7 @@
   .recu-footer .rf-ref { font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; color: #0D1B2A; margin-top: 4px; }
   .recu-qr-wrap {
     display: flex; align-items: center; justify-content: center; gap: 12px;
-    margin-top: 13px; padding-top: 11px; border-top: 1px dashed #E3DBC9;
+    margin-top: 10px; padding-top: 9px; border-top: 1px dashed #E3DBC9;
   }
   .recu-qr-box { background:#fff; padding:4px; border-radius:6px; border:1px solid #E3DBC9; line-height:0; }
   .recu-qr-legende { font-size: 9.5px; color: #7A6F5C; text-align: left; max-width: 170px; line-height: 1.35; }
@@ -5813,7 +5817,7 @@ function genererHtmlRecu(sens, id) {
   const labelFonction = isIn ? 'Fonction ou activités' : 'Objet / Prestation';
   const valeurFonction = isIn
     ? (op.fonction || '—')
-    : ([op.objet, op.prestation].filter(Boolean).join(' — ') || op.type || '—');
+    : ([...new Set([op.objet, op.prestation].filter(Boolean))].join(' — ') || op.type || '—');
   const sig1 = blocSignatureCA('tresorier');
   const sig2 = isIn ? blocSignaturePersonne('Le membre', op.desc) : blocSignatureCA('president');
   const nomPersonne = isIn ? op.desc : (op.beneficiaire || op.desc);
@@ -5849,8 +5853,8 @@ function genererHtmlRecu(sens, id) {
             <div class="recu-row"><span class="rk">${labelFonction}</span><span class="rv">${valeurFonction}</span></div>
             <div class="recu-row"><span class="rk">Catégorie</span><span class="rv">${op.type}</span></div>
             ${!isIn && op.type === 'Médical' && op.fraisReels ? `
-            <div class="recu-row"><span class="rk">Frais médicaux réels</span><span class="rv">${fmt(op.fraisReels)}</span></div>
-            <div class="recu-row"><span class="rk">Taux de prise en charge MTD</span><span class="rv">${op.tauxPriseEnCharge ?? 0}%</span></div>
+            <div class="recu-row recu-row-compact"><span class="rk">Frais médicaux réels</span><span class="rv">${fmt(op.fraisReels)}</span></div>
+            <div class="recu-row recu-row-compact"><span class="rk">Taux de prise en charge MTD</span><span class="rv">${op.tauxPriseEnCharge ?? 0}%</span></div>
             ` : ''}
             <div class="recu-row"><span class="rk">Moyen de paiement</span><span class="rv recu-moyen-paiement">${logoPaiementHTML(moyenPaiement) ? `<span class="recu-logo-paiement">${logoPaiementHTML(moyenPaiement)}</span>` : (payIcon[moyenPaiement]||'') + ' ' + moyenPaiement}${op.telephonePaiement ? ' <span class="recu-tel-paiement">— ' + op.telephonePaiement + '</span>' : ''}</span></div>
             <div class="recu-row"><span class="rk">Date de l'opération</span><span class="rv">${formatDate(op.date)}</span></div>
