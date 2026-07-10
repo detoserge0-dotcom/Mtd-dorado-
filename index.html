@@ -76,6 +76,12 @@
     min-height: 100vh;
     padding: 0;
   }
+  /* Grossit tout l'affichage à l'écran d'environ 12% (texte + espacements
+     ensemble, proportions gardées) — n'affecte jamais l'impression des reçus,
+     qui garde son propre format calibré séparément. */
+  @media screen {
+    body { zoom: 1.12; }
+  }
 
   /* ── HEADER ── */
   .app-header {
@@ -5535,11 +5541,12 @@ function renderDashboard() {
       : enRetard.map(({m,diff})=>`
           <div class="db-membre-retard">
             <div>
-              <div class="dmr-name">${m.prenom} ${m.nom}</div>
-              <div style="font-size:11px;color:var(--muted)">${m.numero} — ${m.fonction||'—'}</div>
+              <div class="dmr-name">${escapeHtml(m.prenom)} ${escapeHtml(m.nom)}</div>
+              <div style="font-size:11px;color:var(--muted)">${escapeHtml(m.numero)} — ${escapeHtml(m.fonction)||'—'}</div>
             </div>
             <div class="dmr-mois">${diff} mois de retard</div>
             <button class="btn btn-gold btn-small" onclick="ajouterCotisationRapide(${m.id})">+ Payer</button>
+            <button class="btn btn-ghost btn-small" style="background:#25D366;color:#fff;border-color:#25D366" onclick="relancerMembreRetardWhatsApp(${m.id}, ${diff})">📤 Relancer</button>
           </div>`).join('');
   }
 
@@ -6634,6 +6641,34 @@ function rejeterPreinscription(id) {
 // le formulaire public de pré-inscription. Si un membre parrain est fourni (id),
 // son nom est ajouté au message et transmis en paramètre d'URL pour pré-remplir
 // automatiquement le champ "Parrainé par" sur le formulaire du prospect.
+// Met un numéro ivoirien au format international attendu par WhatsApp (wa.me) :
+// retire les espaces/tirets, enlève le 0 initial, ajoute l'indicatif 225 si absent.
+function formaterTelephoneWhatsApp(tel) {
+  if (!tel) return '';
+  let chiffres = String(tel).replace(/\D/g, '');
+  if (!chiffres) return '';
+  if (chiffres.startsWith('0')) chiffres = chiffres.slice(1);
+  if (!chiffres.startsWith('225')) chiffres = '225' + chiffres;
+  return chiffres;
+}
+
+// Ouvre WhatsApp directement vers le numéro du membre en retard, avec un message
+// de relance pré-rempli. Ce n'est pas un envoi 100% automatique (il faut encore
+// appuyer sur "Envoyer" dans WhatsApp) — l'architecture de l'app (sans serveur,
+// sans passerelle SMS/WhatsApp Business) ne permet pas un envoi sans intervention
+// humaine, mais c'est réduit à un seul tap.
+function relancerMembreRetardWhatsApp(id, diff) {
+  const m = membres.find(x => x.id === id);
+  if (!m) return;
+  const numero = formaterTelephoneWhatsApp(m.telephone);
+  if (!numero) {
+    alert(`Aucun numéro de téléphone enregistré pour ${m.prenom} ${m.nom}. Impossible d'envoyer une relance WhatsApp.`);
+    return;
+  }
+  const message = `Bonjour ${m.prenom}, nous vous rappelons que votre cotisation à la MTD (Mutuelle des Travailleurs de Dorado) est en retard de ${diff} mois. Merci de bien vouloir régulariser votre situation dès que possible, afin de continuer à bénéficier pleinement de la solidarité de la mutuelle. — MTD Toumodi`;
+  window.open(`https://wa.me/${numero}?text=${encodeURIComponent(message)}`, '_blank');
+}
+
 function partagerInvitationWhatsApp(idParrain) {
   const parrain = idParrain !== undefined ? membres.find(m => m.id === idParrain) : null;
   const nomParrain = parrain ? `${parrain.prenom} ${parrain.nom}` : '';
