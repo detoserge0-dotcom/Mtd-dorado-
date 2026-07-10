@@ -1961,11 +1961,11 @@
         </div>
         <div class="field-group" style="margin-bottom:0">
           <label class="field-label">Statut de cotisation</label>
-          <select class="field-input" id="mStatut">
-            <option value="A jour">À jour</option>
-            <option value="Retard">En retard</option>
-            <option value="Suspendu">Suspendu</option>
-          </select>
+          <div class="field-input" style="display:flex;align-items:center;gap:8px;background:var(--cream)">
+            <input type="checkbox" id="mSuspendu" style="width:auto;margin:0">
+            <label for="mSuspendu" style="font-size:12.5px;margin:0;cursor:pointer">Membre suspendu (décision du C.A.)</label>
+          </div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:4px">« À jour » / « En retard » sont désormais calculés automatiquement à partir des cotisations réellement enregistrées.</div>
         </div>
         <div class="field-group" style="margin-bottom:0">
           <label class="field-label">Conjoint(e) déclaré(e)</label>
@@ -5361,7 +5361,7 @@ function renderDashboard() {
   document.getElementById('dbSorties').textContent = fmt(totalSorties);
   document.getElementById('dbSortiesSub').textContent = sorties.length + ' prestation(s)';
   document.getElementById('dbMembres').textContent = membres.length;
-  const aJour = membres.filter(m=>m.statut==='A jour').length;
+  const aJour = membres.filter(m=>calculerStatutMembre(m)==='A jour').length;
   document.getElementById('dbMembresSub').textContent = aJour + ' à jour / ' + (membres.length - aJour) + ' en retard';
   document.getElementById('dbDemandes').textContent = (demandes||[]).filter(d=>d.statut==='En attente').length;
   document.getElementById('dbReunions').textContent = (reunions||[]).length;
@@ -5412,7 +5412,7 @@ function renderDashboard() {
   document.getElementById('dbPrestationsMois').textContent = sortiesMois.length;
   document.getElementById('dbPrestationsMoisSub').textContent = fmt(depensesMois) + ' versé(s)';
 
-  const membresActifs = membres.filter(m => m.statut !== 'Suspendu');
+  const membresActifs = membres.filter(m => calculerStatutMembre(m) !== 'Suspendu');
   const membresAJourCeMois = membresActifs.filter(m => entrees.some(e =>
     e.type && e.type.includes('Cotisation') && e.date && e.date.startsWith(moisCourant) &&
     (e.desc === m.nom + ' ' + m.prenom || e.desc === m.prenom + ' ' + m.nom || e.desc.toLowerCase().includes(m.nom.toLowerCase()))
@@ -5527,14 +5527,26 @@ function renderDashboard() {
         </tr>`).join('');
   }
 
-  // ── MEMBRES EN RETARD ──
+  // ── MEMBRES EN RETARD (même calcul que la liste Membres — une seule vérité) ──
   const retardZone = document.getElementById('dbMembresRetard');
   if (retardZone) {
-    const enRetard = membres.map(m => {
-      const dernierP = entrees.filter(e=>e.type?.includes('Cotisation')&&e.desc.toLowerCase().includes(m.nom.toLowerCase())).sort((a,b)=>b.date.localeCompare(a.date))[0];
-      const diff = moisDiff(dernierP?.date?.slice(0,7), moisCourant);
-      return { m, diff };
-    }).filter(x=>x.diff>0).sort((a,b)=>b.diff-a.diff).slice(0,6);
+    const enRetard = membres
+      .filter(m => calculerStatutMembre(m) === 'Retard')
+      .map(m => {
+        const cible1 = normRecherche(m.nom + ' ' + m.prenom);
+        const cible2 = normRecherche(m.prenom + ' ' + m.nom);
+        const dernierP = entrees.filter(e => {
+          if (!e.type || !e.type.includes('Cotisation')) return false;
+          const d = normRecherche(e.desc);
+          return d === cible1 || d === cible2;
+        }).sort((a,b) => b.date.localeCompare(a.date))[0];
+        const diff = dernierP
+          ? moisDiff(dernierP.date.slice(0,7), moisCourant)
+          : Math.max(1, moisDiff((m.dateAdhesion || moisCourant).slice(0,7), moisCourant));
+        return { m, diff };
+      })
+      .sort((a,b) => b.diff - a.diff)
+      .slice(0, 6);
 
     retardZone.innerHTML = enRetard.length === 0
       ? '<div class="empty-state">✅ Aucun retard détecté ce mois.</div>'
@@ -6303,6 +6315,40 @@ function imprimerArchive(id) {
 // (données déjà synchronisées sur cet appareil) n'utilise déjà ce numéro — utile si le
 // compteur partagé n'était pas encore à jour sur cet appareil (ex. juste après une
 // utilisation hors-ligne sur un autre téléphone).
+// ══════════════════════════════════════════════════════════════════════════
+// STATUT DE COTISATION — calculé automatiquement, jamais saisi à la main
+// (seul "Suspendu" reste une décision manuelle du CA, indépendante des paiements)
+// ══════════════════════════════════════════════════════════════════════════
+
+// Retourne true si le membre n'a pas payé sa cotisation du mois en cours,
+// en tenant compte d'un mois de grâce pour les tout nouveaux adhérents.
+function estMembreEnRetard(m) {
+  const moisCourant = todayStr().slice(0, 7);
+  const cible1 = normRecherche(m.nom + ' ' + m.prenom);
+  const cible2 = normRecherche(m.prenom + ' ' + m.nom);
+  const paiements = entrees.filter(e => {
+    if (!e.type || !e.type.includes('Cotisation')) return false;
+    const d = normRecherche(e.desc);
+    return d === cible1 || d === cible2;
+  });
+  const paiementsMois = paiements.filter(p => p.date && p.date.startsWith(moisCourant));
+  if (paiementsMois.length > 0) return false; // a déjà payé ce mois-ci
+
+  // Mois de grâce : un membre qui vient d'adhérer ce mois-ci n'est pas encore en retard
+  if (m.dateAdhesion && m.dateAdhesion.slice(0, 7) === moisCourant) return false;
+
+  return true;
+}
+
+// Statut affiché partout dans l'app : "Suspendu" reste une décision manuelle
+// (champ m.suspendu, coché par le Président) ; "À jour"/"En retard" sont
+// désormais TOUJOURS recalculés à partir des vraies cotisations enregistrées,
+// pour ne plus jamais se désynchroniser d'un widget à l'autre.
+function calculerStatutMembre(m) {
+  if (m.suspendu || m.statut === 'Suspendu') return 'Suspendu';
+  return estMembreEnRetard(m) ? 'Retard' : 'A jour';
+}
+
 function genererNumeroMembre() {
   // Recalcule d'abord le plus grand numéro RÉELLEMENT utilisé dans les fiches
   // membres actuellement chargées. Cela rend la génération auto-réparatrice :
@@ -6336,7 +6382,7 @@ function enregistrerMembre() {
   const fonction = document.getElementById('mFonction').value.trim();
   const typeTravailleur = document.getElementById('mTypeTravailleur').value;
   const dateAdhesion = document.getElementById('mDateAdhesion').value;
-  const statut = document.getElementById('mStatut').value;
+  const suspendu = document.getElementById('mSuspendu').checked;
   const conjoint = document.getElementById('mConjoint').value.trim();
   const enfants = parseInt(document.getElementById('mEnfants').value) || 0;
   const parrainePar = document.getElementById('mParrainePar').value.trim();
@@ -6354,7 +6400,7 @@ function enregistrerMembre() {
   if (membreEnEdition !== null) {
     const idx = membres.findIndex(m => m.id === membreEnEdition);
     if (idx !== -1) {
-      membres[idx] = { ...membres[idx], nom, prenom, sexe, dateNaissance, telephone, quartier, fonction, typeTravailleur, dateAdhesion, statut, conjoint, enfants, parrainePar, numero: numero || membres[idx].numero, ayantsDroit: [...ayantsDroitTemp],
+      membres[idx] = { ...membres[idx], nom, prenom, sexe, dateNaissance, telephone, quartier, fonction, typeTravailleur, dateAdhesion, suspendu, conjoint, enfants, parrainePar, numero: numero || membres[idx].numero, ayantsDroit: [...ayantsDroitTemp],
         dernierModifiePar: session?.nom || '—', dernierModifieLe: new Date().toISOString() };
       fbUpsert('membres', membres[idx]);
     }
@@ -6367,7 +6413,7 @@ function enregistrerMembre() {
     if (!numero) numero = genererNumeroMembre();
     const nouveauMembre = {
       id: Date.now(), numero, nom, prenom, sexe, dateNaissance, telephone, quartier,
-      fonction, typeTravailleur, dateAdhesion, statut, conjoint, enfants, parrainePar, ayantsDroit: [...ayantsDroitTemp]
+      fonction, typeTravailleur, dateAdhesion, suspendu, conjoint, enfants, parrainePar, ayantsDroit: [...ayantsDroitTemp]
     };
     membres.push(nouveauMembre);
     fbUpsert('membres', nouveauMembre);
@@ -6418,7 +6464,7 @@ function viderFormulaireMembre() {
   });
   document.getElementById('mSexe').value = 'Masculin';
   document.getElementById('mTypeTravailleur').value = 'Permanent';
-  document.getElementById('mStatut').value = 'A jour';
+  document.getElementById('mSuspendu').checked = false;
   document.getElementById('mDateAdhesion').value = todayStr();
   ayantsDroitTemp = [];
   renderAyantsDroitTemp();
@@ -6439,7 +6485,7 @@ function modifierMembre(id) {
   document.getElementById('mFonction').value = m.fonction || '';
   document.getElementById('mTypeTravailleur').value = m.typeTravailleur || 'Permanent';
   document.getElementById('mDateAdhesion').value = m.dateAdhesion || todayStr();
-  document.getElementById('mStatut').value = m.statut || 'A jour';
+  document.getElementById('mSuspendu').checked = !!(m.suspendu || m.statut === 'Suspendu');
   document.getElementById('mConjoint').value = m.conjoint || '';
   document.getElementById('mEnfants').value = m.enfants || 0;
   document.getElementById('mParrainePar').value = m.parrainePar || '';
@@ -6697,7 +6743,7 @@ function renderMembres() {
       (m.quartier || '').toLowerCase().includes(search)
     );
   }
-  if (filtreStatut) filtered = filtered.filter(m => m.statut === filtreStatut);
+  if (filtreStatut) filtered = filtered.filter(m => calculerStatutMembre(m) === filtreStatut);
   const critere = triActuel.membres;
   const cmp = comparerTri(critere);
   filtered.sort((a,b) => critere === 'numero' ? cmp(a.numero, b.numero)
@@ -6718,7 +6764,7 @@ function renderMembres() {
         <td>${escapeHtml(m.prenom)} ${escapeHtml(m.nom)}</td>
         <td>${escapeHtml(m.telephone) || '—'}</td>
         <td>${escapeHtml(m.fonction) || '—'}</td>
-        <td><span class="badge-statut ${badgeStatutClass(m.statut)}">${badgeStatutLabel(m.statut)}</span></td>
+        <td><span class="badge-statut ${badgeStatutClass(calculerStatutMembre(m))}">${badgeStatutLabel(calculerStatutMembre(m))}</span></td>
         <td style="white-space:nowrap" onclick="event.stopPropagation()">
           <button class="btn btn-ghost btn-small" onclick="modifierMembre(${m.id})">Modifier</button>
           <button class="btn btn-ghost btn-small" onclick="supprimerMembre(${m.id})">Supprimer</button>
@@ -6730,8 +6776,8 @@ function renderMembres() {
 
   // Stats
   document.getElementById('mStatTotal').textContent = membres.length;
-  document.getElementById('mStatAJour').textContent = membres.filter(m => m.statut === 'A jour').length;
-  document.getElementById('mStatRetard').textContent = membres.filter(m => m.statut !== 'A jour').length;
+  document.getElementById('mStatAJour').textContent = membres.filter(m => calculerStatutMembre(m) === 'A jour').length;
+  document.getElementById('mStatRetard').textContent = membres.filter(m => calculerStatutMembre(m) !== 'A jour').length;
   document.getElementById('mStatEnfants').textContent = membres.reduce((s,m) => s + (m.enfants || 0), 0);
 }
 
@@ -6758,7 +6804,7 @@ function imprimerFicheMembre(id) {
 
       <div class="recu-title">FICHE D'ADHÉRENT</div>
       <div class="recu-subtitle">${escapeHtml(m.prenom)} ${escapeHtml(m.nom)}</div>
-      <div class="recu-type-badge in">${badgeStatutLabel(m.statut).toUpperCase()}</div>
+      <div class="recu-type-badge in">${badgeStatutLabel(calculerStatutMembre(m)).toUpperCase()}</div>
 
       <div class="recu-body">
         <div class="recu-row"><span class="rk">Nom & Prénom</span><span class="rv">${escapeHtml(m.prenom)} ${escapeHtml(m.nom)}</span></div>
@@ -6985,26 +7031,26 @@ function genererNotifications() {
     }
   });
 
-  // Membres en retard de cotisation (mois en cours)
+  // Membres en retard de cotisation (mois en cours) — même calcul que la liste
+  // Membres et le Tableau de bord, pour ne plus jamais afficher des chiffres différents.
   const moisCourant = todayStr().slice(0,7);
-  membres.forEach(m => {
-    const nomComplet1 = (m.nom + ' ' + m.prenom).toLowerCase();
-    const nomComplet2 = (m.prenom + ' ' + m.nom).toLowerCase();
-    const paiements = entrees.filter(e => e.type && e.type.includes('Cotisation') &&
-      ((e.desc||'').toLowerCase() === nomComplet1 || (e.desc||'').toLowerCase() === nomComplet2)
-    );
-    if (paiements.length === 0) return; // jamais cotisé : traité ailleurs (statut "absent"), pas une notification de retard
-    const paiementsMois = paiements.filter(p => p.date && p.date.startsWith(moisCourant));
-    if (paiementsMois.length > 0) return; // à jour ce mois-ci
+  membres.filter(m => calculerStatutMembre(m) === 'Retard').forEach(m => {
+    const cible1 = normRecherche(m.nom + ' ' + m.prenom);
+    const cible2 = normRecherche(m.prenom + ' ' + m.nom);
+    const paiements = entrees.filter(e => {
+      if (!e.type || !e.type.includes('Cotisation')) return false;
+      const d = normRecherche(e.desc);
+      return d === cible1 || d === cible2;
+    });
     const dernier = [...paiements].sort((a,b) => b.date.localeCompare(a.date))[0];
-    const diff = moisDiff(dernier.date.slice(0,7), moisCourant);
-    if (diff >= 1) {
-      notifs.push({
-        key: 'retard-' + m.id + '-' + moisCourant, icon: diff >= 2 ? '🔴' : '⚠️', tab: 'cotisations',
-        titre: diff >= 2 ? `Retard de cotisation (${diff} mois)` : 'Retard de cotisation',
-        texte: `${m.prenom} ${m.nom} — ${diff} mois de retard`
-      });
-    }
+    const diff = dernier
+      ? moisDiff(dernier.date.slice(0,7), moisCourant)
+      : Math.max(1, moisDiff((m.dateAdhesion || moisCourant).slice(0,7), moisCourant));
+    notifs.push({
+      key: 'retard-' + m.id + '-' + moisCourant, icon: diff >= 2 ? '🔴' : '⚠️', tab: 'cotisations',
+      titre: diff >= 2 ? `Retard de cotisation (${diff} mois)` : 'Retard de cotisation',
+      texte: `${m.prenom} ${m.nom} — ${diff} mois de retard`
+    });
   });
 
   // Fonds de caisse faible
@@ -7312,7 +7358,7 @@ function afficherResultatScan(m) {
           <div class="detail-field"><div class="df-label">Numéro</div><div class="df-value">${m.numero}</div></div>
           <div class="detail-field"><div class="df-label">Nom & Prénom</div><div class="df-value">${m.prenom} ${m.nom}</div></div>
           <div class="detail-field"><div class="df-label">Téléphone</div><div class="df-value">${m.telephone || '—'}</div></div>
-          <div class="detail-field"><div class="df-label">Statut</div><div class="df-value"><span class="badge-statut ${badgeStatutClass(m.statut)}">${badgeStatutLabel(m.statut)}</span></div></div>
+          <div class="detail-field"><div class="df-label">Statut</div><div class="df-value"><span class="badge-statut ${badgeStatutClass(calculerStatutMembre(m))}">${badgeStatutLabel(calculerStatutMembre(m))}</span></div></div>
           <div class="detail-field"><div class="df-label">Quartier</div><div class="df-value">${m.quartier || '—'}</div></div>
           <div class="detail-field"><div class="df-label">Fonction</div><div class="df-value">${m.fonction || '—'}</div></div>
         </div>
@@ -7417,11 +7463,11 @@ function executerRechercheGlobale() {
   const resultats = [];
 
   (membres || []).forEach(m => {
-    const hay = normRecherche([m.numero, m.nom, m.prenom, m.telephone, m.quartier, m.fonction, m.statut, m.typeTravailleur].join(' '));
+    const hay = normRecherche([m.numero, m.nom, m.prenom, m.telephone, m.quartier, m.fonction, calculerStatutMembre(m), m.typeTravailleur].join(' '));
     if (hay.includes(q)) resultats.push({
       cat: 'membre', icon: '👤', id: m.id,
       titre: `${m.prenom} ${m.nom}`,
-      sous: `N° ${m.numero || '—'} · ${m.telephone || 'Tél. —'} · ${badgeStatutLabel(m.statut)}`
+      sous: `N° ${m.numero || '—'} · ${m.telephone || 'Tél. —'} · ${badgeStatutLabel(calculerStatutMembre(m))}`
     });
   });
 
@@ -7711,13 +7757,16 @@ function renderCotisations() {
 
   const membresTries = [...membres].sort((a,b) => (a.prenom + ' ' + a.nom).localeCompare(b.prenom + ' ' + b.nom, 'fr', { sensitivity: 'base' }));
   const rows = membresTries.map(m => {
-    // Toutes les entrées de cotisation pour ce membre
-    const paiements = entrees.filter(e =>
-      e.type && e.type.includes('Cotisation') &&
-      (e.desc === m.nom + ' ' + m.prenom ||
-       e.desc === m.prenom + ' ' + m.nom ||
-       e.desc.toLowerCase().includes(m.nom.toLowerCase()))
-    ).sort((a,b) => b.date.localeCompare(a.date));
+    // Toutes les entrées de cotisation pour ce membre (correspondance exacte du
+    // nom, insensible aux accents/casse — évite les faux positifs d'un nom qui
+    // contiendrait le nom d'un autre membre en sous-chaîne)
+    const cible1 = normRecherche(m.nom + ' ' + m.prenom);
+    const cible2 = normRecherche(m.prenom + ' ' + m.nom);
+    const paiements = entrees.filter(e => {
+      if (!e.type || !e.type.includes('Cotisation')) return false;
+      const d = normRecherche(e.desc);
+      return d === cible1 || d === cible2;
+    }).sort((a,b) => b.date.localeCompare(a.date));
 
     const totalVerse = paiements.reduce((s,p) => s+p.montant, 0);
     totalCollecte += totalVerse;
@@ -8074,7 +8123,7 @@ function renderKPIs() {
   const totalE = entrees.reduce((s,e)=>s+e.montant,0);
   const totalS = sorties.reduce((s,o)=>s+o.montant,0);
   const solde = totalE - totalS;
-  const nbMembresAJour = membres.filter(m=>m.statut==='A jour').length;
+  const nbMembresAJour = membres.filter(m=>calculerStatutMembre(m)==='A jour').length;
   const tauxCouverture = membres.length > 0 ? Math.round(nbMembresAJour/membres.length*100) : 0;
   const cotisEstimee = membres.length * 3000;
 
@@ -8253,7 +8302,7 @@ function verifierEligibilite() {
 
   const paiements = entrees.filter(e => e.type?.includes('Cotisation') && e.desc.toLowerCase().includes(m.nom.toLowerCase()));
   const moisCotises = paiements.length;
-  const aJour = m.statut === 'A jour';
+  const aJour = calculerStatutMembre(m) === 'A jour';
 
   let eligible = true, message = '';
   if (!aJour) { eligible = false; message = '⛔ Membre non à jour de cotisation.'; }
