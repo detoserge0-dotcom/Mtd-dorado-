@@ -10,7 +10,7 @@
   // À incrémenter à chaque mise à jour importante pour forcer un rechargement propre
   // sur tous les appareils, même si le Service Worker n'a pas encore détecté le changement.
   (function() {
-    var VERSION_APP = 'v2026-07-06d';
+    var VERSION_APP = 'v2026-07-10a';
     try {
       var versionVue = localStorage.getItem('mtd_app_version');
       if (versionVue === VERSION_APP) return; // déjà à jour, rien à faire
@@ -3182,6 +3182,7 @@ const URL_PREINSCRIPTION = 'https://detoserge0-dotcom.github.io/Mtd-dorado-/adhe
 
 let db = null;
 let firebaseOK = false;
+let journalMerge = null; // Dernière version fusionnée du journal (toutes les activités, tous les membres) reçue depuis Firebase
 
 try {
   firebase.initializeApp(firebaseConfig);
@@ -4088,9 +4089,10 @@ function initialiserFirebase() {
       localStorage.setItem('mtd_recus_masques', JSON.stringify([...recusMasques]));
     }
 
-    // Journal activité
+    // Journal activité (fusion de TOUS les appareils/membres, pas seulement celui-ci)
     if (data.journal) {
       const items = Object.values(data.journal).sort((a,b) => b.ts - a.ts).slice(0,20);
+      journalMerge = items;
       renderJournal(items);
 
       // Toast pour les nouvelles activités d'autres utilisateurs
@@ -4231,6 +4233,7 @@ function supprimerJournalEntree(ts) {
       snap.forEach(child => child.ref.remove());
     }).catch(() => {});
   }
+  journalMerge = journal.slice(0,20);
   renderJournal(journal.slice(0,20));
 }
 
@@ -4240,6 +4243,7 @@ function viderJournal() {
   if (firebaseOK && db) {
     db.ref('mtd_dorado/journal').remove().catch(() => {});
   }
+  journalMerge = [];
   renderJournal([]);
 }
 
@@ -6992,9 +6996,15 @@ function renderAll() {
   renderRapportSorties();
   peuplerSelectMembresHistorique();
   renderHistoriqueMembre();
-  // Journal
-  const journalLocal = JSON.parse(localStorage.getItem('mtd_journal') || '[]');
-  renderJournal(journalLocal.slice(0, 20));
+  // Journal : on privilégie la version fusionnée Firebase (tous les membres),
+  // et on ne retombe sur le stockage local que si Firebase n'a encore rien renvoyé
+  // (ex. tout premier chargement hors-ligne).
+  if (journalMerge) {
+    renderJournal(journalMerge);
+  } else {
+    const journalLocal = JSON.parse(localStorage.getItem('mtd_journal') || '[]');
+    renderJournal(journalLocal.slice(0, 20));
+  }
 }
 
 function renderSidebarBadges() {
@@ -7581,8 +7591,12 @@ document.addEventListener('click', (e) => {
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     if (tab.dataset.tab === 'journal') {
-      const journalLocal = JSON.parse(localStorage.getItem('mtd_journal') || '[]');
-      renderJournal(journalLocal.slice(0, 20));
+      if (journalMerge) {
+        renderJournal(journalMerge);
+      } else {
+        const journalLocal = JSON.parse(localStorage.getItem('mtd_journal') || '[]');
+        renderJournal(journalLocal.slice(0, 20));
+      }
     }
   });
 });

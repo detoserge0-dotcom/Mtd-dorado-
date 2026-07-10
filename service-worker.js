@@ -8,7 +8,7 @@
 // version existe et de proposer la mise à jour aux utilisateurs.
 // ══════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'mtd-gestion-v32';
+const CACHE_NAME = 'mtd-gestion-v33';
 
 // Cache séparé et STABLE pour les librairies externes (CDN). Contrairement à
 // CACHE_NAME, celui-ci n'est PAS bumpé à chaque déploiement — sinon chaque mise
