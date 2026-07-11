@@ -10,7 +10,7 @@
   // À incrémenter à chaque mise à jour importante pour forcer un rechargement propre
   // sur tous les appareils, même si le Service Worker n'a pas encore détecté le changement.
   (function() {
-    var VERSION_APP = 'v2026-07-10c';
+    var VERSION_APP = 'v2026-07-10d';
     try {
       var versionVue = localStorage.getItem('mtd_app_version');
       if (versionVue === VERSION_APP) return; // déjà à jour, rien à faire
@@ -691,7 +691,7 @@
 
   /* ── APERÇU REÇU (avant impression) ── */
   .apercu-recu-overlay {
-    position: fixed; inset: 0; background: rgba(20,16,10,0.72);
+    position: fixed; inset: 0; background: rgba(13,10,6,0.94);
     z-index: 9000; display: flex; flex-direction: column; align-items: center;
   }
   .apercu-recu-toolbar {
@@ -3174,7 +3174,7 @@
 
 <div id="apercuRecuOverlay" class="apercu-recu-overlay" style="display:none">
   <div class="apercu-recu-toolbar">
-    <button class="btn btn-gold" onclick="reessayerQRApercu()">🔄 Réessayer le QR</button>
+    <button class="btn btn-gold" id="btnReessayerQR" onclick="reessayerQRApercu()">🔄 Réessayer le QR</button>
     <button class="btn btn-gold" onclick="validerImpressionApercu()">🖨️ Imprimer</button>
     <button class="btn" onclick="fermerApercuRecu()">✖️ Fermer</button>
   </div>
@@ -5968,26 +5968,51 @@ function ouvrirApercuRecu(sens, id) {
 
 // Force un rechargement de la librairie QR (utile si le premier essai a échoué faute de
 // réseau) puis redessine le QR dans l'aperçu, sans avoir à tout refaire depuis le début.
-function chargerLibrairieQR(callback) {
-  if (typeof QRCode !== 'undefined') { callback(); return; }
+// Un paramètre unique dans l'URL force une vraie nouvelle requête réseau (sinon le
+// navigateur peut réutiliser une requête précédente restée bloquée sur connexion lente),
+// et un délai maximum garantit qu'on ne reste jamais bloqué silencieusement.
+function chargerLibrairieQR(callback, timeoutMs) {
+  if (typeof QRCode !== 'undefined') { callback(true); return; }
+  timeoutMs = timeoutMs || 8000;
+
+  document.querySelectorAll('script[data-qr-retry]').forEach(s => s.remove());
+
+  let fini = false;
+  const minuteur = setTimeout(() => finir(typeof QRCode !== 'undefined'), timeoutMs);
+  function finir(succes) {
+    if (fini) return;
+    fini = true;
+    clearTimeout(minuteur);
+    callback(succes);
+  }
+
   const script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-  script.onload = () => callback();
-  script.onerror = () => callback();
+  script.dataset.qrRetry = '1';
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js?retry=' + Date.now();
+  script.onload = () => finir(true);
+  script.onerror = () => finir(false);
   document.head.appendChild(script);
 }
 
 function reessayerQRApercu() {
   if (!_apercuRecuState) return;
+  const btn = document.getElementById('btnReessayerQR');
   const el = document.getElementById('apercuRecuQRCode');
-  if (el) el.innerHTML = '<div style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:7.5px;color:#999;text-align:center">Nouvel essai…</div>';
+  if (el) el.innerHTML = '<div style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:7.5px;color:#999;text-align:center;padding:3px;box-sizing:border-box">Nouvel essai en cours…</div>';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Recherche…'; }
 
   const { sens, id } = _apercuRecuState;
   const r = genererHtmlRecu(sens, id, 'apercuRecuQRCode');
   if (!r) return;
   const { numero, op, membreLie } = r;
-  chargerLibrairieQR(() => {
-    rendreQRCode('apercuRecuQRCode', donneesQR(membreLie, { refDocument: numero, montant: op.montant, date: op.date }));
+
+  chargerLibrairieQR((succes) => {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Réessayer le QR'; }
+    if (succes) {
+      rendreQRCode('apercuRecuQRCode', donneesQR(membreLie, { refDocument: numero, montant: op.montant, date: op.date }));
+    } else if (el) {
+      el.innerHTML = '<div style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:7.5px;color:#999;text-align:center;padding:3px;box-sizing:border-box">QR indisponible<br>(connexion trop faible)</div>';
+    }
   });
 }
 
