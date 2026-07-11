@@ -10,7 +10,7 @@
   // À incrémenter à chaque mise à jour importante pour forcer un rechargement propre
   // sur tous les appareils, même si le Service Worker n'a pas encore détecté le changement.
   (function() {
-    var VERSION_APP = 'v2026-07-10b';
+    var VERSION_APP = 'v2026-07-10c';
     try {
       var versionVue = localStorage.getItem('mtd_app_version');
       if (versionVue === VERSION_APP) return; // déjà à jour, rien à faire
@@ -688,6 +688,22 @@
     align-items: end;
   }
   .filter-row .field-group { flex: 1; min-width: 160px; margin-bottom: 0; }
+
+  /* ── APERÇU REÇU (avant impression) ── */
+  .apercu-recu-overlay {
+    position: fixed; inset: 0; background: rgba(20,16,10,0.72);
+    z-index: 9000; display: flex; flex-direction: column; align-items: center;
+  }
+  .apercu-recu-toolbar {
+    width: 100%; background: #1A1209; padding: 10px 14px;
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3); flex-shrink: 0;
+  }
+  .apercu-recu-toolbar .btn { font-size: 13px; padding: 8px 12px; }
+  .apercu-recu-scroll { flex: 1; width: 100%; overflow-y: auto; padding: 16px 8px 32px; }
+  @media print {
+    .apercu-recu-overlay { display: none !important; }
+  }
 
   /* ── IMPRESSION REÇU ── */
   @page { size: A4; margin: 4mm; }
@@ -3156,6 +3172,17 @@
 <!-- ZONE D'IMPRESSION CACHÉE -->
 <div id="printArea" style="display:none"></div>
 
+<div id="apercuRecuOverlay" class="apercu-recu-overlay" style="display:none">
+  <div class="apercu-recu-toolbar">
+    <button class="btn btn-gold" onclick="reessayerQRApercu()">🔄 Réessayer le QR</button>
+    <button class="btn btn-gold" onclick="validerImpressionApercu()">🖨️ Imprimer</button>
+    <button class="btn" onclick="fermerApercuRecu()">✖️ Fermer</button>
+  </div>
+  <div class="apercu-recu-scroll">
+    <div id="apercuRecuContenu"></div>
+  </div>
+</div>
+
 <div class="app-footer">
   MTD — Mutuelle des Travailleurs de Dorado · Toumodi, Côte d'Ivoire<br>
   0585 208 642 / 0102 357 418 · WhatsApp 0747 651 992 · mtd225@gmail.com<br>
@@ -5142,7 +5169,7 @@ function renderEntrees() {
       <td><span class="badge ${inBadge[e.type]}">${e.typeLabel || e.type}</span></td>
       <td class="amount-cell in">+${fmt(e.montant)}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
-        <button class="btn btn-gold btn-small" onclick="imprimerRecu('in', ${e.id})">🧾 Reçu</button>
+        <button class="btn btn-gold btn-small" onclick="ouvrirApercuRecu('in', ${e.id})">🧾 Reçu</button>
         <button class="btn btn-ghost btn-small" style="color:#25D366" onclick="event.stopPropagation();partagerRecuWhatsApp('in', ${e.id})">📤</button>
         <button class="btn btn-ghost btn-small" title="Retire la ligne de la liste, sans affecter le total" onclick="masquerEntree(${e.id})">Masquer</button>
       </td>
@@ -5203,7 +5230,7 @@ function rendreLigneSortieUnique(s) {
       <td><span class="badge ${catBadge[s.type]}">${s.type}</span></td>
       <td class="amount-cell out">-${fmt(s.montant)}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
-        <button class="btn btn-gold btn-small" onclick="imprimerRecu('out', ${s.id})">🧾 Reçu</button>
+        <button class="btn btn-gold btn-small" onclick="ouvrirApercuRecu('out', ${s.id})">🧾 Reçu</button>
         <button class="btn btn-ghost btn-small" style="color:#25D366" onclick="event.stopPropagation();partagerRecuWhatsApp('out', ${s.id})">📤</button>
         <button class="btn btn-ghost btn-small" title="Retire la ligne de la liste, sans affecter le total" onclick="masquerSortie(${s.id})">Masquer</button>
       </td>
@@ -5262,7 +5289,7 @@ function rendreLigneGroupeSortie(key, g) {
               <td><span class="badge ${catBadge[s.type]}">${s.type}</span></td>
               <td class="amount-cell out" style="text-align:right">-${fmt(s.montant)}</td>
               <td style="white-space:nowrap">
-                <button class="btn btn-gold btn-small" onclick="imprimerRecu('out', ${s.id})">🧾 Reçu</button>
+                <button class="btn btn-gold btn-small" onclick="ouvrirApercuRecu('out', ${s.id})">🧾 Reçu</button>
                 <button class="btn btn-ghost btn-small" style="color:#25D366" onclick="partagerRecuWhatsApp('out', ${s.id})">📤</button>
                 <button class="btn btn-ghost btn-small" onclick="masquerSortie(${s.id})">Masquer</button>
               </td>
@@ -5712,7 +5739,7 @@ function renderRecus() {
         <td><span class="badge ${inBadge[e.type]}">${e.typeLabel || e.type}</span></td>
         <td class="amount-cell in">+${fmt(e.montant)}</td>
         <td style="white-space:nowrap">
-          <button class="btn btn-gold btn-small" onclick="imprimerRecu('in', ${e.id})">🧾 Imprimer</button>
+          <button class="btn btn-gold btn-small" onclick="ouvrirApercuRecu('in', ${e.id})">🧾 Imprimer</button>
           <button class="btn btn-ghost btn-small" style="color:#25D366" onclick="partagerRecuWhatsApp('in', ${e.id})">📤</button>
           <button class="btn btn-ghost btn-small" title="Retirer de la liste (sans toucher au solde)" onclick="masquerRecu('in', ${e.id})">✕</button>
         </td>
@@ -5733,7 +5760,7 @@ function renderRecus() {
         <td><span class="badge ${catBadge[s.type]}">${s.type}</span></td>
         <td class="amount-cell out">-${fmt(s.montant)}</td>
         <td style="white-space:nowrap">
-          <button class="btn btn-gold btn-small" onclick="imprimerRecu('out', ${s.id})">🧾 Imprimer</button>
+          <button class="btn btn-gold btn-small" onclick="ouvrirApercuRecu('out', ${s.id})">🧾 Imprimer</button>
           <button class="btn btn-ghost btn-small" style="color:#25D366" onclick="partagerRecuWhatsApp('out', ${s.id})">📤</button>
           <button class="btn btn-ghost btn-small" title="Retirer de la liste (sans toucher au solde)" onclick="masquerRecu('out', ${s.id})">✕</button>
         </td>
@@ -5830,7 +5857,8 @@ function getMotRemerciement(sens, type) {
 // Génère le HTML complet d'un reçu (entrée ou sortie) sans l'afficher ni l'imprimer.
 // Réutilisé à la fois par l'impression papier et par le partage WhatsApp, pour ne
 // jamais avoir deux versions du même document qui pourraient diverger.
-function genererHtmlRecu(sens, id) {
+function genererHtmlRecu(sens, id, qrContainerId) {
+  qrContainerId = qrContainerId || 'recuQRCode';
   const op = sens === 'in' ? entrees.find(e => e.id === id) : sorties.find(s => s.id === id);
   if (!op) return null;
 
@@ -5912,7 +5940,7 @@ function genererHtmlRecu(sens, id) {
             Document généré le ${formatDate(todayStr())} — Document à conserver
             <div class="rf-ref">RÉF. ${numero}</div>
           </div>
-          ${blocQRHtml('recuQRCode', membreLie
+          ${blocQRHtml(qrContainerId, membreLie
             ? `Scannez pour vérifier les informations du membre associé à ce reçu (réf. ${numero}).`
             : `⚠️ Aucun membre identifié pour "${escapeHtml(nomPersonne)}" — le QR ne contient que la référence du document. Vérifiez l'orthographe ou sélectionnez le nom dans la liste proposée.`)}
         </div>
@@ -5921,6 +5949,59 @@ function genererHtmlRecu(sens, id) {
   `;
 
   return { html, numero, op, membreLie, isIn };
+}
+
+// ── APERÇU REÇU AVANT IMPRESSION (avec réessai du QR) ──
+let _apercuRecuState = null; // { sens, id } du reçu actuellement prévisualisé
+
+function ouvrirApercuRecu(sens, id) {
+  const r = genererHtmlRecu(sens, id, 'apercuRecuQRCode');
+  if (!r) return;
+  const { html, numero, op, membreLie } = r;
+  _apercuRecuState = { sens, id };
+  document.getElementById('apercuRecuContenu').innerHTML = html;
+  document.getElementById('apercuRecuOverlay').style.display = 'flex';
+  attendreLibrairieQR(() => {
+    rendreQRCode('apercuRecuQRCode', donneesQR(membreLie, { refDocument: numero, montant: op.montant, date: op.date }));
+  });
+}
+
+// Force un rechargement de la librairie QR (utile si le premier essai a échoué faute de
+// réseau) puis redessine le QR dans l'aperçu, sans avoir à tout refaire depuis le début.
+function chargerLibrairieQR(callback) {
+  if (typeof QRCode !== 'undefined') { callback(); return; }
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  script.onload = () => callback();
+  script.onerror = () => callback();
+  document.head.appendChild(script);
+}
+
+function reessayerQRApercu() {
+  if (!_apercuRecuState) return;
+  const el = document.getElementById('apercuRecuQRCode');
+  if (el) el.innerHTML = '<div style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:7.5px;color:#999;text-align:center">Nouvel essai…</div>';
+
+  const { sens, id } = _apercuRecuState;
+  const r = genererHtmlRecu(sens, id, 'apercuRecuQRCode');
+  if (!r) return;
+  const { numero, op, membreLie } = r;
+  chargerLibrairieQR(() => {
+    rendreQRCode('apercuRecuQRCode', donneesQR(membreLie, { refDocument: numero, montant: op.montant, date: op.date }));
+  });
+}
+
+function fermerApercuRecu() {
+  document.getElementById('apercuRecuOverlay').style.display = 'none';
+  document.getElementById('apercuRecuContenu').innerHTML = '';
+  _apercuRecuState = null;
+}
+
+function validerImpressionApercu() {
+  if (!_apercuRecuState) return;
+  const { sens, id } = _apercuRecuState;
+  fermerApercuRecu();
+  imprimerRecu(sens, id);
 }
 
 function imprimerRecu(sens, id) {
