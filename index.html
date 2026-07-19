@@ -10,7 +10,7 @@
   // À incrémenter à chaque mise à jour importante pour forcer un rechargement propre
   // sur tous les appareils, même si le Service Worker n'a pas encore détecté le changement.
   (function() {
-    var VERSION_APP = 'v2026-07-10d';
+    var VERSION_APP = 'v2026-07-19a';
     try {
       var versionVue = localStorage.getItem('mtd_app_version');
       if (versionVue === VERSION_APP) return; // déjà à jour, rien à faire
@@ -2125,7 +2125,7 @@
           <div class="field-group">
             <label class="field-label">Nombre de membres réguliers (mensuel)</label>
             <input type="number" class="field-input" id="calcMembresReguliers" value="50" min="0">
-            <div class="field-hint">Membres payant 3 000 FCFA / mois</div>
+            <div class="field-hint">Membres payant 3 000 FCFA / mois — <a href="#" onclick="synchroniserCalculateurMembres(); return false;">🔄 Actualiser depuis les membres enregistrés</a></div>
           </div>
           <div class="field-group">
             <label class="field-label">Cotisation mensuelle (FCFA)</label>
@@ -5077,6 +5077,13 @@ function supprimerSortie(id) {
 }
 
 // ── CALCULATEUR ──
+function synchroniserCalculateurMembres() {
+  const actifs = membres.filter(m => calculerStatutMembre(m) !== 'Suspendu').length;
+  const champReg = document.getElementById('calcMembresReguliers');
+  if (champReg) champReg.value = actifs;
+  calculerCotisations();
+}
+
 function calculerCotisations() {
   const membresReg = parseFloat(document.getElementById('calcMembresReguliers').value) || 0;
   const cotisMens = parseFloat(document.getElementById('calcCotisMensuelle').value) || 0;
@@ -7710,6 +7717,16 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 
 // ── INITIALISATION ──
+// Initialise le calculateur avec le nombre réel de membres actifs enregistrés
+// (au lieu de la valeur fixe "50" codée dans le HTML), afin que l'estimation
+// reflète la mutuelle telle qu'elle est réellement, dès l'ouverture de l'app.
+(function initCalculateurAvecMembresReels() {
+  const actifs = membres.filter(m => calculerStatutMembre(m) !== 'Suspendu').length;
+  const champReg = document.getElementById('calcMembresReguliers');
+  const champSim = document.getElementById('simMembres');
+  if (champReg) champReg.value = actifs;
+  if (champSim) champSim.value = actifs;
+})();
 calculerCotisations();
 calculerSimulation();
 
@@ -8894,6 +8911,7 @@ document.querySelectorAll('.tab').forEach(tab => {
         peuplerSelectMembresHistorique();
         renderHistoriqueMembre();
         break;
+      case 'calculateur': synchroniserCalculateurMembres(); break;
       case 'statistiques': renderStatistiques(); break;
       case 'sorties':      onOutTypeChange(); renderTauxMedical(); break;
       case 'prestations':  renderDemandes();
