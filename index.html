@@ -10,7 +10,7 @@
   // À incrémenter à chaque mise à jour importante pour forcer un rechargement propre
   // sur tous les appareils, même si le Service Worker n'a pas encore détecté le changement.
   (function() {
-    var VERSION_APP = 'v2026-07-19a';
+    var VERSION_APP = 'v2026-07-29a';
     try {
       var versionVue = localStorage.getItem('mtd_app_version');
       if (versionVue === VERSION_APP) return; // déjà à jour, rien à faire
@@ -4457,6 +4457,13 @@ const prestationsParCategorie = {
     'Hospitalisation courte',
     'Hospitalisation longue',
     'Accident grave / Urgence',
+    'Soins dentaires',
+    'Optique',
+    'Évacuation sanitaire',
+    'Transport médical / Ambulance',
+    'Maladies chroniques (forfait mensuel)',
+    'Prévention (vaccination, bilan annuel)',
+    'Accompagnant hospitalisé (forfait/jour)',
   ],
   'Décès': [
     'Assistance décès — Membre adhérent',
@@ -4493,6 +4500,13 @@ const TAUX_MEDICAL_DEFAUT = {
   'Hospitalisation courte': 70,
   'Hospitalisation longue': 80,
   'Accident grave / Urgence': 80,
+  'Soins dentaires': 60,
+  'Optique': 50,
+  'Évacuation sanitaire': 60,
+  'Transport médical / Ambulance': 70,
+  'Maladies chroniques (forfait mensuel)': 70,
+  'Prévention (vaccination, bilan annuel)': 50,
+  'Accompagnant hospitalisé (forfait/jour)': 70,
 };
 
 function getTauxMedical() {
