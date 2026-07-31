@@ -8857,15 +8857,32 @@ function imprimerRapport(type) {
         if (idx >= 0 && idx < 12) parMois[idx] += e.montant;
       }
     });
+    const parMoisSorties = Array(12).fill(0);
+    sorties.forEach(s => {
+      if (s.date && s.date.startsWith(annee)) {
+        const idx = parseInt(s.date.slice(5,7), 10) - 1;
+        if (idx >= 0 && idx < 12) parMoisSorties[idx] += s.montant;
+      }
+    });
+    // Solde cumulé année par année : on part du solde de trésorerie accumulé
+    // avant le 1er janvier de l'année sélectionnée (toutes entrées/sorties
+    // antérieures), puis on ajoute mois après mois le mouvement net.
+    const soldeAvantAnnee = entrees.filter(e => e.date && e.date < annee + '-01-01').reduce((s,e)=>s+e.montant,0)
+      - sorties.filter(s => s.date && s.date < annee + '-01-01').reduce((s,o)=>s+o.montant,0);
     const totalAnnee = parMois.reduce((s,n) => s+n, 0);
-    const rows = MOIS_NOMS.map((nom, i) => `<tr><td>${nom}</td><td style="text-align:right">${parMois[i] ? fmt(parMois[i]) : '—'}</td></tr>`).join('');
+    const totalAnneeSorties = parMoisSorties.reduce((s,n) => s+n, 0);
+    let soldeCumule = soldeAvantAnnee;
+    const rows = MOIS_NOMS.map((nom, i) => {
+      soldeCumule += parMois[i] - parMoisSorties[i];
+      return `<tr><td>${nom}</td><td style="text-align:right;color:#3D8B5F">${parMois[i] ? fmt(parMois[i]) : '—'}</td><td style="text-align:right;color:#B84A3E">${parMoisSorties[i] ? fmt(parMoisSorties[i]) : '—'}</td><td style="text-align:right;font-weight:600">${fmt(soldeCumule)}</td></tr>`;
+    }).join('');
     titre = `RAPPORT ANNUEL DES ENTRÉES — ${annee}`;
-    sousTitre = `Total encaissé par mois sur l'année ${annee}`;
+    sousTitre = `Entrées, sorties et solde de trésorerie par mois sur l'année ${annee}`;
     corps = `
       <table class="recap-table">
-        <thead><tr><th>Mois</th><th style="text-align:right">Total encaissé</th></tr></thead>
+        <thead><tr><th>Mois</th><th style="text-align:right">Entrées</th><th style="text-align:right">Sorties</th><th style="text-align:right">Solde cumulé</th></tr></thead>
         <tbody>${rows}</tbody>
-        <tfoot><tr style="font-weight:700"><td>Total ${annee}</td><td style="text-align:right">${fmt(totalAnnee)}</td></tr></tfoot>
+        <tfoot><tr style="font-weight:700"><td>Total ${annee}</td><td style="text-align:right">${fmt(totalAnnee)}</td><td style="text-align:right">${fmt(totalAnneeSorties)}</td><td style="text-align:right">${fmt(soldeCumule)}</td></tr></tfoot>
       </table>`;
   } else {
     const annee = document.getElementById('rapportSortiesAnnee')?.value || String(new Date().getFullYear());
