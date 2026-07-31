@@ -4236,6 +4236,20 @@ function signalerSyncEnCours() {
   syncAnimationTimeout = setTimeout(() => dot.classList.remove('syncing'), 700);
 }
 
+// Formate la date+heure d'une entrée de journal. Utilise le timestamp ts
+// (toujours présent) plutôt que l'ancien champ "heure" seul, afin d'afficher
+// la date même sur les entrées déjà enregistrées avant ce correctif.
+function formaterDateHeureJournal(i) {
+  if (!i.ts) return i.heure || '';
+  const d = new Date(i.ts);
+  const auj = new Date();
+  const estAujourdhui = d.toDateString() === auj.toDateString();
+  const heure = d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+  if (estAujourdhui) return heure;
+  const date = d.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'2-digit'});
+  return `${date} ${heure}`;
+}
+
 function renderJournal(items) {
   const zone = document.getElementById('journalList');
   if (!zone) return;
@@ -4245,7 +4259,7 @@ function renderJournal(items) {
   }
   zone.innerHTML = items.map(i => `
     <div class="journal-item">
-      <span class="ji-time">${i.heure || ''}</span>
+      <span class="ji-time">${formaterDateHeureJournal(i)}</span>
       <span class="ji-role">${escapeHtml(i.auteur)}</span>
       <span class="ji-msg">${escapeHtml(i.message)}</span>
       <button class="ji-del" title="Supprimer cette ligne" onclick="supprimerJournalEntree(${i.ts})">✕</button>
