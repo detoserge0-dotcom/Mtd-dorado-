@@ -10,7 +10,7 @@
   // À incrémenter à chaque mise à jour importante pour forcer un rechargement propre
   // sur tous les appareils, même si le Service Worker n'a pas encore détecté le changement.
   (function() {
-    var VERSION_APP = 'v2026-07-29a';
+    var VERSION_APP = 'v2026-08-09a';
     try {
       var versionVue = localStorage.getItem('mtd_app_version');
       if (versionVue === VERSION_APP) return; // déjà à jour, rien à faire
@@ -7172,6 +7172,7 @@ let notifInitialisees = false;
 
 function genererNotifications() {
   const notifs = [];
+  const moisCourant = todayStr().slice(0,7);
 
   // Demandes de prestation en attente
   (typeof demandes !== 'undefined' ? demandes : []).forEach(d => {
@@ -7182,28 +7183,6 @@ function genererNotifications() {
         texte: `${d.membreNom} — ${d.type} — ${fmt(d.montant)}`
       });
     }
-  });
-
-  // Membres en retard de cotisation (mois en cours) — même calcul que la liste
-  // Membres et le Tableau de bord, pour ne plus jamais afficher des chiffres différents.
-  const moisCourant = todayStr().slice(0,7);
-  membres.filter(m => calculerStatutMembre(m) === 'Retard').forEach(m => {
-    const cible1 = normRecherche(m.nom + ' ' + m.prenom);
-    const cible2 = normRecherche(m.prenom + ' ' + m.nom);
-    const paiements = entrees.filter(e => {
-      if (!e.type || !e.type.includes('Cotisation')) return false;
-      const d = normRecherche(e.desc);
-      return d === cible1 || d === cible2;
-    });
-    const dernier = [...paiements].sort((a,b) => b.date.localeCompare(a.date))[0];
-    const diff = dernier
-      ? moisDiff(dernier.date.slice(0,7), moisCourant)
-      : Math.max(1, moisDiff((m.dateAdhesion || moisCourant).slice(0,7), moisCourant));
-    notifs.push({
-      key: 'retard-' + m.id + '-' + moisCourant, icon: diff >= 2 ? '🔴' : '⚠️', tab: 'cotisations',
-      titre: diff >= 2 ? `Retard de cotisation (${diff} mois)` : 'Retard de cotisation',
-      texte: `${m.prenom} ${m.nom} — ${diff} mois de retard`
-    });
   });
 
   // Fonds de caisse faible
@@ -7271,6 +7250,30 @@ function genererNotifications() {
     }
   });
 
+  // Membres en retard de cotisation (mois en cours) — même calcul que la liste
+  // Membres et le Tableau de bord, pour ne plus jamais afficher des chiffres différents.
+  // Placé EN DERNIER volontairement : ces alertes peuvent être nombreuses et ne doivent
+  // pas masquer les autres types de notifications (plus rares, souvent plus urgentes)
+  // au-dessus de la limite de défilement du panneau.
+  membres.filter(m => calculerStatutMembre(m) === 'Retard').forEach(m => {
+    const cible1 = normRecherche(m.nom + ' ' + m.prenom);
+    const cible2 = normRecherche(m.prenom + ' ' + m.nom);
+    const paiements = entrees.filter(e => {
+      if (!e.type || !e.type.includes('Cotisation')) return false;
+      const d = normRecherche(e.desc);
+      return d === cible1 || d === cible2;
+    });
+    const dernier = [...paiements].sort((a,b) => b.date.localeCompare(a.date))[0];
+    const diff = dernier
+      ? moisDiff(dernier.date.slice(0,7), moisCourant)
+      : Math.max(1, moisDiff((m.dateAdhesion || moisCourant).slice(0,7), moisCourant));
+    notifs.push({
+      key: 'retard-' + m.id + '-' + moisCourant, icon: diff >= 2 ? '🔴' : '⚠️', tab: 'cotisations',
+      titre: diff >= 2 ? `Retard de cotisation (${diff} mois)` : 'Retard de cotisation',
+      texte: `${m.prenom} ${m.nom} — ${diff} mois de retard`
+    });
+  });
+
   return notifs;
 }
 
@@ -7284,13 +7287,25 @@ function renderNotifications() {
     badge.style.display = notifs.length > 0 ? 'flex' : 'none';
   }
   if (list) {
-    list.innerHTML = notifs.length === 0
-      ? '<div class="notif-empty">Aucune notification pour le moment.</div>'
-      : notifs.map(n => `
+    if (notifs.length === 0) {
+      list.innerHTML = '<div class="notif-empty">Aucune notification pour le moment.</div>';
+    } else {
+      let html = '';
+      let separateurAjoute = false;
+      const nbRetards = notifs.filter(n => n.key.startsWith('retard-')).length;
+      notifs.forEach(n => {
+        if (!separateurAjoute && n.key.startsWith('retard-')) {
+          html += `<div class="notif-dropdown-title" style="margin-top:6px;border-top:1px solid var(--border);padding-top:10px">Retards de cotisation (${nbRetards})</div>`;
+          separateurAjoute = true;
+        }
+        html += `
         <div class="notif-item" onclick="allerVersTab('${n.tab}')">
           <span class="notif-icon">${n.icon}</span>
           <div><div class="notif-titre">${n.titre}</div><div class="notif-texte">${n.texte}</div></div>
-        </div>`).join('');
+        </div>`;
+      });
+      list.innerHTML = html;
+    }
   }
 
   if (!notifInitialisees) {
