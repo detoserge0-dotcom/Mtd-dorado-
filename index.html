@@ -2599,6 +2599,9 @@
             <option value="absent">Non enregistré</option>
           </select>
         </div>
+        <div style="align-self:flex-end">
+          <button class="btn btn-ghost" onclick="imprimerRapportCotisations()">🖨️ Rapport du mois</button>
+        </div>
       </div>
       <div id="cotisStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-bottom:20px"></div>
 
@@ -6471,13 +6474,7 @@ function imprimerArchive(id) {
 // en tenant compte d'un mois de grâce pour les tout nouveaux adhérents.
 function estMembreEnRetard(m) {
   const moisCourant = todayStr().slice(0, 7);
-  const cible1 = normRecherche(m.nom + ' ' + m.prenom);
-  const cible2 = normRecherche(m.prenom + ' ' + m.nom);
-  const paiements = entrees.filter(e => {
-    if (!e.type || !e.type.includes('Cotisation')) return false;
-    const d = normRecherche(e.desc);
-    return d === cible1 || d === cible2;
-  });
+  const paiements = entrees.filter(e => e.type && e.type.includes('Cotisation') && membreCorrespond(m, e.desc));
   const paiementsMois = paiements.filter(p => p.date && p.date.startsWith(moisCourant));
   if (paiementsMois.length > 0) return false; // a déjà payé ce mois-ci
 
@@ -7942,13 +7939,8 @@ function renderCotisations() {
     // Toutes les entrées de cotisation pour ce membre (correspondance exacte du
     // nom, insensible aux accents/casse — évite les faux positifs d'un nom qui
     // contiendrait le nom d'un autre membre en sous-chaîne)
-    const cible1 = normRecherche(m.nom + ' ' + m.prenom);
-    const cible2 = normRecherche(m.prenom + ' ' + m.nom);
-    const paiements = entrees.filter(e => {
-      if (!e.type || !e.type.includes('Cotisation')) return false;
-      const d = normRecherche(e.desc);
-      return d === cible1 || d === cible2;
-    }).sort((a,b) => b.date.localeCompare(a.date));
+    const paiements = entrees.filter(e => e.type && e.type.includes('Cotisation') && membreCorrespond(m, e.desc))
+      .sort((a,b) => b.date.localeCompare(a.date));
 
     const totalVerse = paiements.reduce((s,p) => s+p.montant, 0);
     totalCollecte += totalVerse;
@@ -8945,6 +8937,76 @@ function imprimerRapport(type) {
       <div class="recu-title">${titre}</div>
       <div class="recu-subtitle">${sousTitre}</div>
       ${corps}
+      <div class="recu-signatures">
+        <div class="recu-sig"><div class="rs-label">${blocSignatureCA('tresorier')}</div><div class="rs-line">Nom & Signature</div></div>
+        <div class="recu-sig"><div class="rs-label">${blocSignatureCA('president')}</div><div class="rs-line">Nom & Signature</div></div>
+      </div>
+      <div class="recu-footer">
+        MTD — Mutuelle des Travailleurs de Dorado · ${contact.localisation}<br>
+        ${contact.telephones} · WhatsApp ${contact.whatsapp} · ${contact.email}
+      </div>
+    </div>
+  `;
+  document.getElementById('printArea').innerHTML = html;
+  window.print();
+}
+
+// ── IMPRESSION DU RAPPORT DES PAIEMENTS (COTISATIONS) D'UN MOIS DONNÉ ──
+function imprimerRapportCotisations() {
+  const moisFil = document.getElementById('cotisFilter')?.value || new Date().toISOString().slice(0,7);
+  const [an, mo] = moisFil.split('-');
+  const nomMois = `${MOIS_NOMS[parseInt(mo,10)-1]} ${an}`;
+  const contact = getParametresContact();
+
+  let nbPaye=0, nbRetard=0, nbAbsent=0, totalCollecte=0;
+  const membresTries = [...membres].sort((a,b) => (a.prenom + ' ' + a.nom).localeCompare(b.prenom + ' ' + b.nom, 'fr', { sensitivity: 'base' }));
+
+  const rows = membresTries.map(m => {
+    if (m.suspendu || m.statut === 'Suspendu') return null; // hors périmètre du rapport de cotisations
+    const paiements = entrees.filter(e => e.type && e.type.includes('Cotisation') && membreCorrespond(m, e.desc))
+      .sort((a,b) => b.date.localeCompare(a.date));
+    const paiementsMois = paiements.filter(p => p.date.startsWith(moisFil));
+    const montantMois = paiementsMois.reduce((s,p) => s+p.montant, 0);
+    const dernierPaiement = paiements[0];
+
+    let statutLabel;
+    if (paiementsMois.length > 0) {
+      statutLabel = '✓ Payé'; nbPaye++; totalCollecte += montantMois;
+    } else if (paiements.length === 0) {
+      statutLabel = '— Non enregistré'; nbAbsent++;
+    } else {
+      const diff = moisDiff(dernierPaiement.date.slice(0,7), moisFil);
+      statutLabel = `⚠ Retard ${diff} mois`; nbRetard++;
+    }
+
+    return `<tr>
+      <td>${m.numero}</td>
+      <td>${m.prenom} ${m.nom}</td>
+      <td>${statutLabel}</td>
+      <td>${dernierPaiement ? formatDate(dernierPaiement.date) : '—'}</td>
+      <td style="text-align:right;font-family:monospace">${montantMois ? fmt(montantMois) : '—'}</td>
+    </tr>`;
+  }).filter(Boolean).join('');
+
+  const html = `
+    <div class="recu-doc">
+      <div class="recu-header">
+        <div class="rh-brand">
+          <div class="rh-mark">MTD</div>
+          <div>
+            <h2>Mutuelle des Travailleurs de Dorado</h2>
+            <p>Toumodi, Côte d'Ivoire</p>
+          </div>
+        </div>
+        <div class="rh-num">Document généré le ${formatDate(todayStr())}</div>
+      </div>
+      <div class="recu-title">RAPPORT DES PAIEMENTS DE COTISATIONS — ${nomMois.toUpperCase()}</div>
+      <div class="recu-subtitle">Statut de chaque membre pour ${nomMois}</div>
+      <table class="recap-table">
+        <thead><tr><th>N°</th><th>Membre</th><th>Statut</th><th>Dernier paiement</th><th style="text-align:right">Versé ce mois</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5" class="empty-state">Aucun membre enregistré.</td></tr>'}</tbody>
+        <tfoot><tr style="font-weight:700"><td colspan="4">Payé : ${nbPaye} · En retard : ${nbRetard} · Non enregistré : ${nbAbsent}</td><td style="text-align:right;font-family:monospace">${fmt(totalCollecte)}</td></tr></tfoot>
+      </table>
       <div class="recu-signatures">
         <div class="recu-sig"><div class="rs-label">${blocSignatureCA('tresorier')}</div><div class="rs-line">Nom & Signature</div></div>
         <div class="recu-sig"><div class="rs-label">${blocSignatureCA('president')}</div><div class="rs-line">Nom & Signature</div></div>
